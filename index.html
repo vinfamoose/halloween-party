@@ -172,34 +172,27 @@ async function loadAll(){
   const [{data: entries}, {data: teams}, {data: categories}, {data: votes}] = await Promise.all([
     sb.from('entries').select('id,name,costume,team_id'),
     sb.from('teams').select('id,display_name'),
-    sb.from('categories').select('id,name,individuals_mode,team_min_size,team_max_size,sort_order').order('sort_order'),
+    sb.from('categories').select('id,name,kind,sort_order').order('sort_order'),
     sb.from('votes').select('device_id,category_id,entry_id,team_id')
   ]);
   return { entries: entries||[], teams: teams||[], categories: categories||[], votes: votes||[] };
 }
 
-// Eligibility is entirely data-driven from the category row — no per-category
-// branching here, so adding a new category never means editing this function.
-function buildContestants(category, state){
+function buildContestants(kind, state){
   const { entries, teams } = state;
-
-  let individualPool = [];
-  if(category.individuals_mode === 'solo_only') individualPool = entries.filter(e => !e.team_id);
-  else if(category.individuals_mode === 'all') individualPool = entries;
-  const individualContestants = individualPool.map(e => ({ type:'entry', id:e.id, label:e.name, sub:e.costume, tag:null }));
-
-  let teamContestants = [];
-  if(category.team_min_size != null || category.team_max_size != null){
-    teamContestants = teams
-      .map(t => {
-        const members = entries.filter(e => e.team_id === t.id);
-        const size = members.length;
-        return { type:'team', id:t.id, label:t.display_name, sub: members.map(m=>m.name).join(', ') + (members[0]? ' — ' + members[0].costume : ''), tag: size===2 ? 'Couple' : 'Group', size };
-      })
-      .filter(t => t.size >= (category.team_min_size ?? 0) && (category.team_max_size == null || t.size <= category.team_max_size));
-  }
-
-  return [...individualContestants, ...teamContestants];
+  const sizeByTeam = {};
+  entries.forEach(e => { if(e.team_id) sizeByTeam[e.team_id] = (sizeByTeam[e.team_id]||0)+1; });
+  const solo = entries.filter(e => !e.team_id).map(e => ({ type:'entry', id:e.id, label:e.name, sub:e.costume, tag:null }));
+  const teamContestants = teams.map(t => {
+    const members = entries.filter(e => e.team_id === t.id);
+    const size = members.length;
+    return { type:'team', id:t.id, label:t.display_name, sub: members.map(m=>m.name).join(', ') + (members[0]? ' — ' + members[0].costume : ''), tag: size===2 ? 'Couple' : 'Group', size };
+  });
+  if(kind==='individual') return solo;
+  if(kind==='couples') return teamContestants.filter(t => t.size===2);
+  if(kind==='group') return teamContestants.filter(t => t.size>=3);
+  if(kind==='open') return [...solo, ...teamContestants];
+  return [];
 }
 
 function withCounts(contestants, categoryId, votes){
@@ -248,7 +241,7 @@ async function renderVoteList(category){
   const msgEl = document.getElementById('voteMsg');
   msgEl.textContent = '';
   listEl.innerHTML = '<div class="empty">Loading entries...</div>';
-  const contestants = withCounts(buildContestants(category, currentState), category.id, currentState.votes);
+  const contestants = withCounts(buildContestants(category.kind, currentState), category.id, currentState.votes);
   if(contestants.length === 0){
     listEl.innerHTML = `<div class="empty">No entries eligible for ${escapeHtml(category.name)} yet.</div>`;
     return;
@@ -314,18 +307,15 @@ async function loadResults(){
     const key = v.entry_id ? 'e_' + v.entry_id : 't_' + v.team_id;
     overallTotals[key] = (overallTotals[key] || 0) + 1;
   });
-  // Every person is listed individually here (not just solo people) —
-  // someone in a team can still rack up votes via Most Phoned In, and
-  // those need to count toward their own Best Overall total.
-  const allIndividuals = state.entries.map(e => ({ id: 'e_'+e.id, label: e.name, sub: e.costume, votes: overallTotals['e_'+e.id] || 0 }));
+  const solo = state.entries.filter(e => !e.team_id).map(e => ({ id: 'e_'+e.id, label: e.name, sub: e.costume, votes: overallTotals['e_'+e.id] || 0 }));
   const teamOverall = state.teams.map(t => {
     const members = state.entries.filter(e => e.team_id === t.id);
     return { id: 't_'+t.id, label: t.display_name, sub: members.map(m=>m.name).join(', '), votes: overallTotals['t_'+t.id] || 0 };
   });
-  listEl.appendChild(renderLeaderboard('🏆 Best Overall', [...allIndividuals, ...teamOverall], true));
+  listEl.appendChild(renderLeaderboard('🏆 Best Overall', [...solo, ...teamOverall], true));
 
   state.categories.forEach(cat => {
-    const contestants = withCounts(buildContestants(cat, state), cat.id, state.votes);
+    const contestants = withCounts(buildContestants(cat.kind, state), cat.id, state.votes);
     listEl.appendChild(renderLeaderboard(cat.name, contestants, false));
   });
 }
