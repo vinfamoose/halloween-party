@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Costume Contest</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg: #150f1e; --panel: #221732; --panel-2: #2c1f42; --line: #4a3768;
+    --bone: #ece4d4; --bone-dim: #b8ad9a; --pumpkin: #ff7a2f; --violet: #9b6bff; --rot: #6fbf6f; --gold: #e8c34a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: radial-gradient(ellipse 900px 500px at 20% -10%, #341f52 0%, transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 10%, #3a1a2e 0%, transparent 55%), var(--bg);
+    color:var(--bone); font-family: Georgia, serif; min-height:100vh; padding: 28px 16px 60px;
+  }
+  .wrap{max-width:520px;margin:0 auto;}
+  .hero{text-align:center;margin-bottom:22px;}
+  .hero h1{font-size:2.1rem;margin:0 0 6px;text-shadow:0 0 18px rgba(155,107,255,0.35);}
+  .hero p{font-family:-apple-system,sans-serif;color:var(--bone-dim);font-size:0.9rem;margin:0;}
+  .tabs{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:5px;margin-bottom:14px;}
+  .tab{flex:1;text-align:center;padding:10px 6px;border-radius:8px;font-family:-apple-system,sans-serif;font-size:0.82rem;font-weight:600;color:var(--bone-dim);cursor:pointer;}
+  .tab.active{background:var(--pumpkin);color:#1a0f08;}
+  .subtabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
+  .subtab{padding:7px 12px;border-radius:20px;border:1px solid var(--line);font-family:-apple-system,sans-serif;font-size:0.76rem;font-weight:600;color:var(--bone-dim);cursor:pointer;background:var(--panel);}
+  .subtab.active{background:var(--violet);border-color:var(--violet);color:#0e0a17;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px;}
+  label{display:block;font-family:-apple-system,sans-serif;font-size:0.78rem;color:var(--bone-dim);margin-bottom:6px;}
+  .hint{font-family:-apple-system,sans-serif;font-size:0.72rem;color:var(--bone-dim);margin:-10px 0 14px;}
+  input[type=text]{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:11px 12px;color:var(--bone);font-family:-apple-system,sans-serif;font-size:0.95rem;margin-bottom:14px;}
+  input[type=text]:focus{outline:none;border-color:var(--pumpkin);}
+  button{width:100%;background:var(--pumpkin);color:#1a0f08;border:none;border-radius:8px;padding:12px;font-family:-apple-system,sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;}
+  button:disabled{opacity:0.5;}
+  button.secondary{background:transparent;border:1px solid var(--line);color:var(--bone);}
+  .qr-box{background:#fff;padding:12px;border-radius:10px;display:flex;justify-content:center;margin:14px 0 6px;}
+  .qr-link{text-align:center;font-family:-apple-system,sans-serif;font-size:0.72rem;color:var(--bone-dim);word-break:break-all;}
+  .entry{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;}
+  .entry.voted{border-color:var(--rot);}
+  .entry .name{font-weight:700;font-size:0.95rem;}
+  .entry .costume{font-family:-apple-system,sans-serif;font-size:0.78rem;color:var(--bone-dim);}
+  .tag{display:inline-block;font-family:-apple-system,sans-serif;font-size:0.65rem;font-weight:700;color:var(--violet);border:1px solid var(--violet);border-radius:10px;padding:1px 6px;margin-left:6px;vertical-align:middle;}
+  .bar-row{margin-bottom:14px;}
+  .bar-row .top{display:flex;justify-content:space-between;font-family:-apple-system,sans-serif;font-size:0.85rem;margin-bottom:5px;}
+  .bar-row .top .n{font-weight:700;}
+  .bar-track{height:10px;background:var(--panel-2);border-radius:6px;overflow:hidden;}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--pumpkin),var(--violet));border-radius:6px;transition:width 0.4s ease;}
+  .bar-fill.gold{background:linear-gradient(90deg,var(--gold),var(--pumpkin));}
+  .section-title{font-family:-apple-system,sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.3px;color:var(--bone-dim);margin:18px 0 10px;}
+  .section-title:first-child{margin-top:0;}
+  .empty{text-align:center;color:var(--bone-dim);font-family:-apple-system,sans-serif;font-size:0.85rem;padding:24px 10px;}
+  .msg{text-align:center;font-family:-apple-system,sans-serif;font-size:0.82rem;color:var(--rot);margin-top:10px;min-height:1em;}
+  .msg.err{color:#ff8a8a;}
+  .crown{font-size:1.1rem;margin-right:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero"><h1>🎃 Costume Contest</h1><p>Check in, then vote for the best looks</p></div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="register">Check In</div>
+    <div class="tab" data-tab="vote">Vote</div>
+    <div class="tab" data-tab="results">Results</div>
+  </div>
+
+  <div id="register-panel">
+    <div class="card">
+      <label for="nameInput">Your name</label>
+      <input type="text" id="nameInput" placeholder="e.g. Jordan" maxlength="40">
+      <label for="costumeInput">Your costume</label>
+      <input type="text" id="costumeInput" placeholder="e.g. Zombie Bride" maxlength="60">
+      <label for="groupInput">Couple / group costume name (optional)</label>
+      <input type="text" id="groupInput" placeholder="e.g. Ghostbusters Crew" maxlength="60">
+      <div class="hint">Everyone in your couple or group should type this exact same name — that's how we know you're together, even if we don't know each other.</div>
+      <button id="registerBtn">Check In</button>
+      <div class="msg" id="registerMsg"></div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <label style="text-align:center;">Share this to let others check in</label>
+      <div class="qr-box"><div id="qrcode"></div></div>
+      <div class="qr-link" id="qrLink"></div>
+    </div>
+  </div>
+
+  <div id="vote-panel" style="display:none;">
+    <div class="subtabs" id="categoryTabs"></div>
+    <div class="card"><div id="voteList"></div><div class="msg" id="voteMsg"></div></div>
+  </div>
+
+  <div id="results-panel" style="display:none;">
+    <div class="card"><div id="resultsList"></div></div>
+    <button class="secondary" id="refreshResults">Refresh</button>
+  </div>
+</div>
+
+<script>
+// ---- Fill these in from your Supabase project (Settings → API) ----
+const SUPABASE_URL = "https://rxcgwuduvnfycrjhvgbu.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_I-eXfzk5HEwkdZ2YAHIwjw_5o8SqYDl";
+// ---------------------------------------------------------------------
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function getDeviceId(){
+  let id = localStorage.getItem('costume-contest-device-id');
+  if(!id){ id = 'd_' + crypto.randomUUID(); localStorage.setItem('costume-contest-device-id', id); }
+  return id;
+}
+function normalize(s){ return s.trim().toLowerCase().replace(/\s+/g,' '); }
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ---------- Tabs ----------
+const tabs = document.querySelectorAll('.tab');
+const panels = { register: document.getElementById('register-panel'), vote: document.getElementById('vote-panel'), results: document.getElementById('results-panel') };
+tabs.forEach(t => t.addEventListener('click', () => {
+  tabs.forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  Object.keys(panels).forEach(k => panels[k].style.display = 'none');
+  panels[t.dataset.tab].style.display = 'block';
+  if(t.dataset.tab === 'vote') loadCategoriesAndVotePanel();
+  if(t.dataset.tab === 'results') loadResults();
+}));
+
+try{
+  new QRCode(document.getElementById('qrcode'), { text: window.location.href, width: 160, height: 160, colorDark: "#150f1e", colorLight: "#ffffff" });
+}catch(e){}
+document.getElementById('qrLink').textContent = window.location.href;
+
+// ---------- Check-in ----------
+document.getElementById('registerBtn').addEventListener('click', async () => {
+  const nameEl = document.getElementById('nameInput');
+  const costumeEl = document.getElementById('costumeInput');
+  const groupEl = document.getElementById('groupInput');
+  const msgEl = document.getElementById('registerMsg');
+  const name = nameEl.value.trim();
+  const costume = costumeEl.value.trim();
+  const groupName = groupEl.value.trim();
+  if(!name || !costume){
+    msgEl.textContent = 'Enter both a name and a costume.';
+    msgEl.className = 'msg err';
+    return;
+  }
+  const btn = document.getElementById('registerBtn');
+  btn.disabled = true; btn.textContent = 'Checking in...';
+  try{
+    let teamId = null;
+    if(groupName){
+      const { data: team, error: teamErr } = await sb.from('teams')
+        .upsert({ normalized_name: normalize(groupName), display_name: groupName }, { onConflict: 'normalized_name' })
+        .select().single();
+      if(teamErr) throw teamErr;
+      teamId = team.id;
+    }
+    const { error } = await sb.from('entries').insert({ name, costume, team_id: teamId });
+    if(error) throw error;
+    msgEl.textContent = `You're in, ${name}! Good luck.`;
+    msgEl.className = 'msg';
+    nameEl.value = ''; costumeEl.value = ''; groupEl.value = '';
+  }catch(e){
+    msgEl.textContent = 'Something went wrong — try again.';
+    msgEl.className = 'msg err';
+  }
+  btn.disabled = false; btn.textContent = 'Check In';
+});
+
+// ---------- Shared data load ----------
+async function loadAll(){
+  const [{data: entries}, {data: teams}, {data: categories}, {data: votes}] = await Promise.all([
+    sb.from('entries').select('id,name,costume,team_id'),
+    sb.from('teams').select('id,display_name'),
+    sb.from('categories').select('id,name,kind,sort_order').order('sort_order'),
+    sb.from('votes').select('device_id,category_id,entry_id,team_id')
+  ]);
+  return { entries: entries||[], teams: teams||[], categories: categories||[], votes: votes||[] };
+}
+
+function buildContestants(kind, state){
+  const { entries, teams } = state;
+  const sizeByTeam = {};
+  entries.forEach(e => { if(e.team_id) sizeByTeam[e.team_id] = (sizeByTeam[e.team_id]||0)+1; });
+  const solo = entries.filter(e => !e.team_id).map(e => ({ type:'entry', id:e.id, label:e.name, sub:e.costume, tag:null }));
+  const teamContestants = teams.map(t => {
+    const members = entries.filter(e => e.team_id === t.id);
+    const size = members.length;
+    return { type:'team', id:t.id, label:t.display_name, sub: members.map(m=>m.name).join(', ') + (members[0]? ' — ' + members[0].costume : ''), tag: size===2 ? 'Couple' : 'Group', size };
+  });
+  if(kind==='individual') return solo;
+  if(kind==='couples') return teamContestants.filter(t => t.size===2);
+  if(kind==='group') return teamContestants.filter(t => t.size>=3);
+  if(kind==='open') return [...solo, ...teamContestants];
+  return [];
+}
+
+function withCounts(contestants, categoryId, votes){
+  const map = {};
+  votes.filter(v => v.category_id === categoryId).forEach(v => {
+    const key = v.entry_id || v.team_id;
+    map[key] = (map[key]||0) + 1;
+  });
+  return contestants.map(c => ({ ...c, votes: map[c.id] || 0 }));
+}
+
+// ---------- Vote panel ----------
+let currentState = null;
+let currentCategoryId = null;
+
+async function loadCategoriesAndVotePanel(){
+  currentState = await loadAll();
+  const tabsEl = document.getElementById('categoryTabs');
+  tabsEl.innerHTML = '';
+  currentState.categories.forEach((cat, i) => {
+    const el = document.createElement('div');
+    el.className = 'subtab' + (i===0 ? ' active' : '');
+    el.textContent = cat.name;
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.subtab').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      currentCategoryId = cat.id;
+      renderVoteList(cat);
+    });
+    tabsEl.appendChild(el);
+  });
+  if(currentState.categories.length){
+    currentCategoryId = currentState.categories[0].id;
+    renderVoteList(currentState.categories[0]);
+  }
+}
+
+async function getMyVote(categoryId){
+  const { data } = await sb.from('votes').select('entry_id, team_id').eq('device_id', getDeviceId()).eq('category_id', categoryId).maybeSingle();
+  if(!data) return null;
+  return data.entry_id || data.team_id;
+}
+
+async function renderVoteList(category){
+  const listEl = document.getElementById('voteList');
+  const msgEl = document.getElementById('voteMsg');
+  msgEl.textContent = '';
+  listEl.innerHTML = '<div class="empty">Loading entries...</div>';
+  const contestants = withCounts(buildContestants(category.kind, currentState), category.id, currentState.votes);
+  if(contestants.length === 0){
+    listEl.innerHTML = `<div class="empty">No entries eligible for ${escapeHtml(category.name)} yet.</div>`;
+    return;
+  }
+  const myVote = await getMyVote(category.id);
+  listEl.innerHTML = '';
+  contestants.forEach(c => {
+    const row = document.createElement('div');
+    row.className = 'entry' + (myVote === c.id ? ' voted' : '');
+    row.innerHTML = `<div><div class="name">${myVote === c.id ? '<span class="crown">✅</span>' : ''}${escapeHtml(c.label)}${c.tag ? `<span class="tag">${c.tag}</span>` : ''}</div><div class="costume">${escapeHtml(c.sub)}</div></div>`;
+    row.addEventListener('click', async () => {
+      try{
+        const payload = { device_id: getDeviceId(), category_id: category.id, entry_id: c.type==='entry' ? c.id : null, team_id: c.type==='team' ? c.id : null };
+        await sb.from('votes').upsert(payload, { onConflict: 'device_id,category_id' });
+        msgEl.textContent = `Voted for ${c.label} in ${category.name}!`;
+        msgEl.className = 'msg';
+        currentState = await loadAll();
+        renderVoteList(category);
+      }catch(e){
+        msgEl.textContent = 'Vote failed — try again.';
+        msgEl.className = 'msg err';
+      }
+    });
+    listEl.appendChild(row);
+  });
+}
+
+// ---------- Results panel ----------
+function renderLeaderboard(title, contestants, gold){
+  const wrap = document.createElement('div');
+  const h = document.createElement('div');
+  h.className = 'section-title';
+  h.textContent = title;
+  wrap.appendChild(h);
+  if(contestants.length === 0){
+    const e = document.createElement('div');
+    e.className = 'empty';
+    e.textContent = 'No entries yet.';
+    wrap.appendChild(e);
+    return wrap;
+  }
+  const sorted = [...contestants].sort((a,b) => b.votes - a.votes);
+  const maxVotes = Math.max(1, sorted[0].votes);
+  sorted.forEach((c, i) => {
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    const pct = Math.round((c.votes / maxVotes) * 100);
+    row.innerHTML = `<div class="top"><span>${i===0 && c.votes>0 ? '<span class="crown">👑</span>' : ''}${escapeHtml(c.label)} — ${escapeHtml(c.sub)}</span><span class="n">${c.votes}</span></div><div class="bar-track"><div class="bar-fill${gold?' gold':''}" style="width:${pct}%"></div></div>`;
+    wrap.appendChild(row);
+  });
+  return wrap;
+}
+
+async function loadResults(){
+  const listEl = document.getElementById('resultsList');
+  listEl.innerHTML = '<div class="empty">Loading results...</div>';
+  const state = await loadAll();
+  listEl.innerHTML = '';
+
+  // Best Overall: not a category — total votes per contestant, summed across ALL categories.
+  const overallTotals = {};
+  state.votes.forEach(v => {
+    const key = v.entry_id ? 'e_' + v.entry_id : 't_' + v.team_id;
+    overallTotals[key] = (overallTotals[key] || 0) + 1;
+  });
+  const solo = state.entries.filter(e => !e.team_id).map(e => ({ id: 'e_'+e.id, label: e.name, sub: e.costume, votes: overallTotals['e_'+e.id] || 0 }));
+  const teamOverall = state.teams.map(t => {
+    const members = state.entries.filter(e => e.team_id === t.id);
+    return { id: 't_'+t.id, label: t.display_name, sub: members.map(m=>m.name).join(', '), votes: overallTotals['t_'+t.id] || 0 };
+  });
+  listEl.appendChild(renderLeaderboard('🏆 Best Overall', [...solo, ...teamOverall], true));
+
+  state.categories.forEach(cat => {
+    const contestants = withCounts(buildContestants(cat.kind, state), cat.id, state.votes);
+    listEl.appendChild(renderLeaderboard(cat.name, contestants, false));
+  });
+}
+document.getElementById('refreshResults').addEventListener('click', loadResults);
+
+// ---------- Live updates ----------
+sb.channel('costume-contest-changes')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'entries' }, refreshVisible)
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, refreshVisible)
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, refreshVisible)
+  .subscribe();
+
+function refreshVisible(){
+  if(panels.vote.style.display !== 'none') loadCategoriesAndVotePanel();
+  if(panels.results.style.display !== 'none') loadResults();
+}
+</script>
+</body>
+</html>
