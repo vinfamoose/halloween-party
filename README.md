@@ -42,8 +42,9 @@ no code changes needed unless you introduce a new `kind` beyond
 
 ## Pages
 - `index.html` — guests on phones: Check In and Vote.
-- `results.html` — live leaderboard. Open it on the TV/laptop for the host screen
-  (`https://…/results.html`); guests can reach it from the Results tab too.
+- `results.html` — live leaderboard, phone-sized on every screen (the Results tab links here).
+- `display.html` — the big projector version of the leaderboard. Open it on the TV/laptop
+  (`https://…/display.html`).
 - `host.html` — host-only photo studio (needs the host login, see below).
 - `style.css` / `shared.js` — shared styles and Supabase/data logic. Both pages
   are plain static files, so GitHub Pages (free) hosts them as-is.
