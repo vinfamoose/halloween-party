@@ -21,23 +21,13 @@
 
 <div class="wrap">
   <header class="sign">
-    <div class="osd"><span>HOST ONLY</span><button type="button" class="linkbtn" id="signOut" hidden>Sign out</button></div>
+    <div class="osd"><span>HOST</span></div>
     <h1>Host <span>Photos</span></h1>
     <p>Photograph every guest and every group for the voting page</p>
   </header>
 
   <main>
-    <form class="slip" id="loginForm" novalidate>
-      <h2 class="title">Host sign in</h2>
-      <label for="email">Email</label>
-      <input type="text" id="email" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false">
-      <label for="password">Password</label>
-      <input type="password" id="password" autocomplete="current-password">
-      <button type="submit" class="btn" id="loginBtn">Sign in</button>
-      <div class="msg" id="loginMsg" role="alert"></div>
-    </form>
-
-    <section id="studio" hidden>
+    <section id="studio">
       <div class="ballot"><span>PHOTOGRAPHED</span><span id="progress"></span></div>
       <button type="button" class="btn ghost" id="addToggle" aria-expanded="false">Add a guest</button>
       <form class="slip addform" id="addForm" novalidate hidden>
@@ -81,28 +71,9 @@ function toast(msg, isErr){
   clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
 }
 
-// ---------- Auth ----------
-// Writes are enforced by Supabase (row-level security + storage policies accept only a signed-in
-// host), so this page being public is harmless: without the login it can't upload anything.
-function showAuthState(session){
-  $('loginForm').hidden = !!session;
-  $('studio').hidden = !session;
-  $('signOut').hidden = !session;
-  if(session) loadStudio();
-}
-$('loginForm').addEventListener('submit', async ev => {
-  ev.preventDefault();
-  const btn = $('loginBtn'); btn.disabled = true; btn.textContent = 'Signing in...'; $('loginMsg').textContent = '';
-  const { error } = await sb.auth.signInWithPassword({ email: $('email').value.trim(), password: $('password').value });
-  btn.disabled = false; btn.textContent = 'Sign in';
-  if(error) $('loginMsg').textContent = 'Email or password is wrong.';
-  else $('password').value = '';
-});
-$('signOut').addEventListener('click', () => sb.auth.signOut());
-sb.auth.onAuthStateChange((_evt, session) => showAuthState(session));
-sb.auth.getSession().then(({ data }) => showAuthState(data.session));
 
 // ---------- Studio ----------
+// No login: keep this page's link to yourself. Anyone who has the link can edit the guest list.
 let state = null;
 let needsOnly = true;
 let target = null;      // { key: 'e_12' | 't_3', label }
@@ -122,6 +93,7 @@ async function loadStudio(){
   render();
   syncAddGroups();
 }
+loadStudio();
 
 function render(){
   if(!state) return;
@@ -244,7 +216,7 @@ function armDelete(btn, label, action, doneMsg){
 async function run(btn, action, doneMsg){
   btn.disabled = true;
   try{ await action(); toast(doneMsg); }
-  catch(e){ toast('That failed — are you signed in as host? Try again.', true); }
+  catch(e){ toast('That failed — try again.', true); }
   await loadStudio();
 }
 
@@ -296,7 +268,7 @@ $('addForm').addEventListener('submit', async ev => {
     ['aName','aCostume','aGroupNew'].forEach(i => $(i).value = ''); $('aGender').value = ''; $('aGroup').value = '';
     toast('Added ' + name + '. Tap them below to take their photo.');
     await loadStudio();
-  }catch(e){ $('aMsg').textContent = 'Could not add — are you signed in as host?'; }
+  }catch(e){ $('aMsg').textContent = 'Could not add — try again.'; }
   btn.disabled = false; btn.textContent = 'Add guest';
 });
 
@@ -328,7 +300,7 @@ $('fileInput').addEventListener('change', async () => {
     if(error) throw error;
     toast(`Saved photo for ${label}.`);
   }catch(e){
-    toast('Upload failed — are you signed in as host? Try again.', true);
+    toast('Upload failed — try again.', true);
   }
   busy.delete(key);
   await loadStudio();

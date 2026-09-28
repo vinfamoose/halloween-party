@@ -1,4 +1,4 @@
-// Shared by index.html (guests) and results.html (host screen).
+// Shared by party.html (guests), results.html, display.html and host.html.
 // ---- Fill these in from your Supabase project (Settings → API) ----
 const SUPABASE_URL = "https://rxcgwuduvnfycrjhvgbu.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_I-eXfzk5HEwkdZ2YAHIwjw_5o8SqYDl";
