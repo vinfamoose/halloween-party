@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0c0a0a">
+<title>Host Photos — Costume Contest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="host">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+</svg>
+
+<div class="wrap">
+  <header class="sign">
+    <div class="osd"><span>HOST ONLY</span><button type="button" class="linkbtn" id="signOut" hidden>Sign out</button></div>
+    <h1>Host <span>Photos</span></h1>
+    <p>Photograph every guest and every group for the voting page</p>
+  </header>
+
+  <main>
+    <form class="slip" id="loginForm" novalidate>
+      <h2 class="title">Host sign in</h2>
+      <label for="email">Email</label>
+      <input type="text" id="email" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false">
+      <label for="password">Password</label>
+      <input type="password" id="password" autocomplete="current-password">
+      <button type="submit" class="btn" id="loginBtn">Sign in</button>
+      <div class="msg" id="loginMsg" role="alert"></div>
+    </form>
+
+    <section id="studio" hidden>
+      <div class="ballot"><span>PHOTOGRAPHED</span><span id="progress"></span></div>
+      <button type="button" class="btn ghost" id="addToggle" aria-expanded="false">Add a guest</button>
+      <form class="slip addform" id="addForm" novalidate hidden>
+        <h2 class="title">Add guest</h2>
+        <label for="aName">Name</label>
+        <input type="text" id="aName" maxlength="40">
+        <label for="aCostume">Costume</label>
+        <input type="text" id="aCostume" maxlength="60">
+        <label for="aGender">Gender</label>
+        <select id="aGender"><option value="">Choose one…</option><option value="male">Male</option><option value="female">Female</option></select>
+        <label for="aGroup">Duo / group</label>
+        <select id="aGroup"></select>
+        <input type="text" id="aGroupNew" placeholder="New group name" maxlength="60" hidden>
+        <button type="submit" class="btn" id="aBtn">Add guest</button>
+        <div class="msg" id="aMsg" role="alert"></div>
+      </form>
+      <div class="dividers" role="tablist" aria-label="Filter">
+        <button type="button" class="divider" role="tab" id="fNeeds" aria-selected="true"><span>Needs photo</span></button>
+        <button type="button" class="divider" role="tab" id="fAll" aria-selected="false"><span>Everyone</span></button>
+      </div>
+      <h2 class="title" id="groupsTitle">Groups</h2>
+      <div class="shelf" id="groupList"></div>
+      <h2 class="title spaced">Individuals</h2>
+      <div class="shelf" id="soloList"></div>
+    </section>
+  </main>
+</div>
+
+<input type="file" id="fileInput" accept="image/*" hidden>
+<div class="toast" id="toast" role="status" aria-live="polite" style="bottom:20px"></div>
+
+<script src="shared.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const ICON_CAM = '<svg class="icon" aria-hidden="true"><use href="#i-camera"/></svg>';
+const ICON_OK = '<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>';
+
+let toastTimer;
+function toast(msg, isErr){
+  const el = $('toast'); el.textContent = msg; el.className = 'toast show' + (isErr ? ' err' : '');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+// ---------- Auth ----------
+// Writes are enforced by Supabase (row-level security + storage policies accept only a signed-in
+// host), so this page being public is harmless: without the login it can't upload anything.
+function showAuthState(session){
+  $('loginForm').hidden = !!session;
+  $('studio').hidden = !session;
+  $('signOut').hidden = !session;
+  if(session) loadStudio();
+}
+$('loginForm').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const btn = $('loginBtn'); btn.disabled = true; btn.textContent = 'Signing in...'; $('loginMsg').textContent = '';
+  const { error } = await sb.auth.signInWithPassword({ email: $('email').value.trim(), password: $('password').value });
+  btn.disabled = false; btn.textContent = 'Sign in';
+  if(error) $('loginMsg').textContent = 'Email or password is wrong.';
+  else $('password').value = '';
+});
+$('signOut').addEventListener('click', () => sb.auth.signOut());
+sb.auth.onAuthStateChange((_evt, session) => showAuthState(session));
+sb.auth.getSession().then(({ data }) => showAuthState(data.session));
+
+// ---------- Studio ----------
+let state = null;
+let needsOnly = true;
+let target = null;      // { key: 'e_12' | 't_3', label }
+const busy = new Set(); // keys currently uploading
+
+function setFilter(needs){
+  needsOnly = needs;
+  $('fNeeds').setAttribute('aria-selected', needs);
+  $('fAll').setAttribute('aria-selected', !needs);
+  render();
+}
+$('fNeeds').addEventListener('click', () => setFilter(true));
+$('fAll').addEventListener('click', () => setFilter(false));
+
+async function loadStudio(){
+  state = await loadAll();
+  render();
+  syncAddGroups();
+}
+
+function render(){
+  if(!state) return;
+  const photos = state.photoMap;
+  const teamOf = Object.fromEntries(state.teams.map(t => [t.id, t.display_name]));
+  const groups = state.teams.map(t => {
+    const members = state.entries.filter(e => e.team_id === t.id);
+    return { key: 't_' + t.id, label: t.display_name, sub: members.map(m => m.name).join(', ') || 'No members yet' };
+  });
+  const solos = state.entries.map(e => ({ key: 'e_' + e.id, label: e.name, sub: e.costume, tag: e.team_id ? teamOf[e.team_id] : null }));
+  const all = [...groups, ...solos];
+  const done = all.filter(x => photos[x.key]).length;
+  $('progress').innerHTML = `<b>${done}</b> OF ${all.length}`;
+  fill($('groupList'), groups, 'No groups have checked in yet.');
+  fill($('soloList'), solos, 'Nobody has checked in yet.');
+  $('groupsTitle').hidden = false;
+}
+
+const openEditors = new Set();
+const NEW = '__new__';
+const groupOptions = (selectedName, allowNone = true) => {
+  const names = state.teams.map(t => t.display_name).sort((a, b) => a.localeCompare(b));
+  return (allowNone ? '<option value="">None — solo</option>' : '') +
+    names.map(n => '<option value="' + escapeHtml(n) + '"' + (n === selectedName ? ' selected' : '') + '>' + escapeHtml(n) + '</option>').join('') +
+    '<option value="' + NEW + '">&lt;Add New&gt;</option>';
+};
+
+function fill(listEl, items, emptyText){
+  const photos = state.photoMap;
+  const shown = items
+    .filter(x => !needsOnly || !photos[x.key] || openEditors.has(x.key))
+    .sort((a, b) => a.label.localeCompare(b.label));
+  listEl.innerHTML = '';
+  if(!items.length){ listEl.innerHTML = `<div class="empty">${emptyText}</div>`; return; }
+  if(!shown.length){ listEl.innerHTML = '<div class="empty">All photographed. Nice work.</div>'; return; }
+  shown.forEach(x => {
+    const has = !!photos[x.key];
+    const wrap = document.createElement('div');
+    wrap.className = 'hostrow';
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = `tape t${spineTone(x.key)} hasphoto` + (has ? ' voted' : '');
+    row.disabled = busy.has(x.key);
+    const thumb = has ? `<img class="photo" src="${escapeHtml(photos[x.key])}" alt="">` : `<span class="photo empty-photo">${ICON_CAM}</span>`;
+    const state_ = busy.has(x.key) ? 'Saving…' : has ? `<span class="stamp">${ICON_OK}Retake</span>` : 'Photo';
+    row.innerHTML = `${thumb}<span class="body"><span class="name">${escapeHtml(x.label)}${x.tag ? `<span class="tag">${escapeHtml(x.tag)}</span>` : ''}</span><span class="costume">${escapeHtml(x.sub)}</span></span><span class="state">${state_}</span>`;
+    row.addEventListener('click', () => { target = { key: x.key, label: x.label }; $('fileInput').value = ''; $('fileInput').click(); });
+    const edit = document.createElement('button');
+    edit.type = 'button'; edit.className = 'editbtn'; edit.setAttribute('aria-expanded', openEditors.has(x.key));
+    edit.setAttribute('aria-label', 'Edit ' + x.label);
+    edit.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>Edit';
+    edit.addEventListener('click', () => { openEditors.has(x.key) ? openEditors.delete(x.key) : openEditors.add(x.key); render(); });
+    wrap.append(row, edit);
+    if(openEditors.has(x.key)) wrap.appendChild(editorFor(x));
+    listEl.appendChild(wrap);
+  });
+}
+
+// ---------- Manage: regroup / delete ----------
+function editorFor(x){
+  const ed = document.createElement('div');
+  ed.className = 'editor';
+  const isTeam = x.key.startsWith('t_');
+  const id = x.key.slice(2);
+  if(!isTeam){
+    const entry = state.entries.find(e => String(e.id) === id);
+    const current = entry && entry.team_id ? (state.teams.find(t => t.id === entry.team_id) || {}).display_name : '';
+    ed.innerHTML = `<label for="g-${x.key}">Group</label>
+      <select id="g-${x.key}">${groupOptions(current)}</select>
+      <input type="text" id="gn-${x.key}" placeholder="New group name" maxlength="60" hidden>
+      <div class="editor-actions"><button type="button" class="btn" data-act="save">Save group</button>
+      <button type="button" class="btn danger" data-act="del">Delete person</button></div>`;
+    const sel = ed.querySelector('select'), nu = ed.querySelector('input');
+    sel.addEventListener('change', () => { nu.hidden = sel.value !== NEW; if(!nu.hidden) nu.focus(); });
+    ed.querySelector('[data-act=save]').addEventListener('click', async ev => {
+      const name = sel.value === NEW ? nu.value.trim() : sel.value;
+      if(sel.value === NEW && !name){ toast('Type the new group name.', true); return; }
+      await run(ev.currentTarget, async () => {
+        const teamId = name ? await upsertTeam(name) : null;
+        const { error } = await sb.from('entries').update({ team_id: teamId }).eq('id', id);
+        if(error) throw error;
+        await cleanupEmptyTeams();
+      }, `Updated ${x.label}.`);
+    });
+    armDelete(ed.querySelector('[data-act=del]'), 'Delete person', async () => {
+      await sb.from('votes').delete().eq('entry_id', id);
+      const { error } = await sb.from('entries').delete().eq('id', id);
+      if(error) throw error;
+      sb.storage.from('photos').remove(['entry-' + id + '.jpg']);
+      await cleanupEmptyTeams();
+    }, `Deleted ${x.label}.`);
+  }else{
+    ed.innerHTML = `<p class="hint">Deleting a group breaks it up: its members stay as individuals, and the votes it received are removed.</p>
+      <div class="editor-actions"><button type="button" class="btn danger" data-act="del">Delete group</button></div>`;
+    armDelete(ed.querySelector('[data-act=del]'), 'Delete group', async () => {
+      await sb.from('entries').update({ team_id: null }).eq('team_id', id);
+      await sb.from('votes').delete().eq('team_id', id);
+      const { error } = await sb.from('teams').delete().eq('id', id);
+      if(error) throw error;
+      sb.storage.from('photos').remove(['team-' + id + '.jpg']);
+    }, `Deleted ${x.label}.`);
+  }
+  return ed;
+}
+
+// Two-step confirm without a modal: first tap arms the button, second tap deletes.
+function armDelete(btn, label, action, doneMsg){
+  let timer;
+  btn.addEventListener('click', async () => {
+    if(!btn.classList.contains('armed')){
+      btn.classList.add('armed'); btn.textContent = 'Tap again to confirm';
+      timer = setTimeout(() => { btn.classList.remove('armed'); btn.textContent = label; }, 4000);
+      return;
+    }
+    clearTimeout(timer);
+    await run(btn, action, doneMsg);
+  });
+}
+
+async function run(btn, action, doneMsg){
+  btn.disabled = true;
+  try{ await action(); toast(doneMsg); }
+  catch(e){ toast('That failed — are you signed in as host? Try again.', true); }
+  await loadStudio();
+}
+
+async function upsertTeam(name){
+  const { data, error } = await sb.from('teams')
+    .upsert({ normalized_name: normalize(name), display_name: name }, { onConflict: 'normalized_name' })
+    .select().single();
+  if(error) throw error;
+  return data.id;
+}
+
+// A group with nobody left in it (and the votes/photo pointing at it) goes away.
+async function cleanupEmptyTeams(){
+  const [{ data: teams }, { data: entries }] = await Promise.all([
+    sb.from('teams').select('id'), sb.from('entries').select('team_id')
+  ]);
+  const used = new Set((entries || []).map(e => e.team_id));
+  for(const t of (teams || []).filter(t => !used.has(t.id))){
+    await sb.from('votes').delete().eq('team_id', t.id);
+    await sb.from('teams').delete().eq('id', t.id);
+    sb.storage.from('photos').remove(['team-' + t.id + '.jpg']);
+  }
+}
+
+// ---------- Add a guest ----------
+function syncAddGroups(){
+  const sel = $('aGroup'); const keep = sel.value;
+  sel.innerHTML = groupOptions('');
+  if([...sel.options].some(o => o.value === keep)) sel.value = keep;
+  $('aGroupNew').hidden = sel.value !== NEW;
+}
+$('aGroup').addEventListener('change', () => { $('aGroupNew').hidden = $('aGroup').value !== NEW; if(!$('aGroupNew').hidden) $('aGroupNew').focus(); });
+$('addToggle').addEventListener('click', () => {
+  const open = $('addForm').hidden;
+  $('addForm').hidden = !open; $('addToggle').setAttribute('aria-expanded', open);
+  if(open){ syncAddGroups(); $('aName').focus(); }
+});
+$('addForm').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const name = $('aName').value.trim(), costume = $('aCostume').value.trim(), gender = $('aGender').value;
+  const group = $('aGroup').value === NEW ? $('aGroupNew').value.trim() : $('aGroup').value;
+  if(!name || !costume || !gender || ($('aGroup').value === NEW && !group)){ $('aMsg').textContent = 'Enter a name, a costume, a gender and, for a new group, its name.'; return; }
+  $('aMsg').textContent = '';
+  const btn = $('aBtn'); btn.disabled = true; btn.textContent = 'Adding...';
+  try{
+    const teamId = group ? await upsertTeam(group) : null;
+    const { error } = await sb.from('entries').insert({ name, costume, gender, team_id: teamId });
+    if(error) throw error;
+    ['aName','aCostume','aGroupNew'].forEach(i => $(i).value = ''); $('aGender').value = ''; $('aGroup').value = '';
+    toast('Added ' + name + '. Tap them below to take their photo.');
+    await loadStudio();
+  }catch(e){ $('aMsg').textContent = 'Could not add — are you signed in as host?'; }
+  btn.disabled = false; btn.textContent = 'Add guest';
+});
+
+// ---------- Capture → resize → upload ----------
+async function toJpeg(file, maxSide = 1200){
+  const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  const scale = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('encode')), 'image/jpeg', 0.82));
+}
+
+$('fileInput').addEventListener('change', async () => {
+  const file = $('fileInput').files[0];
+  if(!file || !target) return;
+  const { key, label } = target;
+  const isTeam = key.startsWith('t_');
+  const id = key.slice(2);
+  const path = (isTeam ? 'team-' : 'entry-') + id + '.jpg';
+  busy.add(key); render();
+  try{
+    const blob = await toJpeg(file);
+    const up = await sb.storage.from('photos').upload(path, blob, { upsert: true, contentType: 'image/jpeg', cacheControl: '60' });
+    if(up.error) throw up.error;
+    const row = { path, updated_at: new Date().toISOString() };
+    row[isTeam ? 'team_id' : 'entry_id'] = id;
+    const { error } = await sb.from('contestant_photos').upsert(row, { onConflict: isTeam ? 'team_id' : 'entry_id' });
+    if(error) throw error;
+    toast(`Saved photo for ${label}.`);
+  }catch(e){
+    toast('Upload failed — are you signed in as host? Try again.', true);
+  }
+  busy.delete(key);
+  await loadStudio();
+});
+</script>
+</body>
+</html>

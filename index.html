@@ -2,194 +2,145 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0c0a0a">
 <title>Costume Contest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-  :root{
-    --bg: #150f1e; --panel: #221732; --panel-2: #2c1f42; --line: #4a3768;
-    --bone: #ece4d4; --bone-dim: #b8ad9a; --pumpkin: #ff7a2f; --violet: #9b6bff; --rot: #6fbf6f; --gold: #e8c34a;
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background: radial-gradient(ellipse 900px 500px at 20% -10%, #341f52 0%, transparent 60%),
-      radial-gradient(ellipse 700px 500px at 100% 10%, #3a1a2e 0%, transparent 55%), var(--bg);
-    color:var(--bone); font-family: Georgia, serif; min-height:100vh; padding: 28px 16px 60px;
-  }
-  .wrap{max-width:520px;margin:0 auto;}
-  .hero{text-align:center;margin-bottom:22px;}
-  .hero h1{font-size:2.1rem;margin:0 0 6px;text-shadow:0 0 18px rgba(155,107,255,0.35);}
-  .hero p{font-family:-apple-system,sans-serif;color:var(--bone-dim);font-size:0.9rem;margin:0;}
-  .tabs{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:5px;margin-bottom:14px;}
-  .tab{flex:1;text-align:center;padding:10px 6px;border-radius:8px;font-family:-apple-system,sans-serif;font-size:0.82rem;font-weight:600;color:var(--bone-dim);cursor:pointer;}
-  .tab.active{background:var(--pumpkin);color:#1a0f08;}
-  .subtabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
-  .subtab{padding:7px 12px;border-radius:20px;border:1px solid var(--line);font-family:-apple-system,sans-serif;font-size:0.76rem;font-weight:600;color:var(--bone-dim);cursor:pointer;background:var(--panel);}
-  .subtab.active{background:var(--violet);border-color:var(--violet);color:#0e0a17;}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px;}
-  label{display:block;font-family:-apple-system,sans-serif;font-size:0.78rem;color:var(--bone-dim);margin-bottom:6px;}
-  .hint{font-family:-apple-system,sans-serif;font-size:0.72rem;color:var(--bone-dim);margin:-10px 0 14px;}
-  input[type=text]{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:11px 12px;color:var(--bone);font-family:-apple-system,sans-serif;font-size:0.95rem;margin-bottom:14px;}
-  input[type=text]:focus,select:focus{outline:none;border-color:var(--pumpkin);}
-  select{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:11px 12px;color:var(--bone);font-family:-apple-system,sans-serif;font-size:0.95rem;margin-bottom:14px;}
-  button{width:100%;background:var(--pumpkin);color:#1a0f08;border:none;border-radius:8px;padding:12px;font-family:-apple-system,sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;}
-  button:disabled{opacity:0.5;}
-  button.secondary{background:transparent;border:1px solid var(--line);color:var(--bone);}
-  .qr-box{background:#fff;padding:12px;border-radius:10px;display:flex;justify-content:center;margin:14px 0 6px;}
-  .qr-link{text-align:center;font-family:-apple-system,sans-serif;font-size:0.72rem;color:var(--bone-dim);word-break:break-all;}
-  .entry{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;}
-  .entry.voted{border-color:var(--rot);}
-  .entry.own{opacity:0.5;cursor:not-allowed;}
-  .entry .name{font-weight:700;font-size:0.95rem;}
-  .entry .costume{font-family:-apple-system,sans-serif;font-size:0.78rem;color:var(--bone-dim);}
-  .tag{display:inline-block;font-family:-apple-system,sans-serif;font-size:0.65rem;font-weight:700;color:var(--violet);border:1px solid var(--violet);border-radius:10px;padding:1px 6px;margin-left:6px;vertical-align:middle;}
-  .bar-row{margin-bottom:14px;}
-  .bar-row .top{display:flex;justify-content:space-between;font-family:-apple-system,sans-serif;font-size:0.85rem;margin-bottom:5px;}
-  .bar-row .top .n{font-weight:700;}
-  .bar-track{height:10px;background:var(--panel-2);border-radius:6px;overflow:hidden;}
-  .bar-fill{height:100%;background:linear-gradient(90deg,var(--pumpkin),var(--violet));border-radius:6px;transition:width 0.4s ease;}
-  .bar-fill.gold{background:linear-gradient(90deg,var(--gold),var(--pumpkin));}
-  .section-title{font-family:-apple-system,sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.3px;color:var(--bone-dim);margin:18px 0 10px;}
-  .section-title:first-child{margin-top:0;}
-  .empty{text-align:center;color:var(--bone-dim);font-family:-apple-system,sans-serif;font-size:0.85rem;padding:24px 10px;}
-  .msg{text-align:center;font-family:-apple-system,sans-serif;font-size:0.82rem;color:var(--rot);margin-top:10px;min-height:1em;}
-  .msg.err{color:#ff8a8a;}
-  .crown{font-size:1.1rem;margin-right:4px;}
-</style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-slip" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 8h8M8 12h8M8 16h4"/></symbol>
+  <symbol id="i-tape" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1"/><circle cx="9" cy="12" r="2"/><circle cx="15" cy="12" r="2"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 01-8 0V4z"/><path d="M8 6H4v1a3 3 0 003 3M16 6h4v1a3 3 0 01-3 3M12 13v4M8 20h8M10 17h4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z" fill="currentColor" stroke="none"/></symbol>
+</svg>
+
+<div class="devbanner" id="devBanner" hidden>DEV TEST MODE — nothing is remembered, every vote counts as a new guest</div>
 <div class="wrap">
-  <div class="hero"><h1>🎃 Costume Contest</h1><p>Check in, then vote for the best looks</p></div>
+  <header class="sign">
+    <div class="osd"><span class="play"><svg class="icon"><use href="#i-play"/></svg>PLAY</span><span id="clock" aria-hidden="true">00:00:00</span></div>
+    <h1>Costume <span>Contest</span></h1>
+    <p>Check in, then vote for the best looks</p>
+  </header>
 
-  <div class="tabs">
-    <div class="tab active" data-tab="register">Check In</div>
-    <div class="tab" data-tab="vote">Vote</div>
-    <div class="tab" data-tab="results">Results</div>
-  </div>
+  <main>
+    <section id="register-panel" class="panel">
+      <div class="receipt" id="registeredCard" hidden>
+        <div class="stub">CHECKED IN</div>
+        <div class="who" id="registeredName"></div>
+        <p class="as" id="registeredText"></p>
+        <div class="barcode" aria-hidden="true"></div>
+        <button type="button" class="btn ghost" id="newGuestBtn" hidden>Test: check in another guest</button>
+      </div>
 
-  <div id="register-panel">
-    <div class="card" id="registeredCard" style="display:none;text-align:center;">
-      <div class="section-title">✅ Checked in</div>
-      <div id="registeredText"></div>
-    </div>
-    <div class="card" id="registerForm">
-      <label for="nameInput">Your name</label>
-      <input type="text" id="nameInput" placeholder="e.g. Jordan" maxlength="40">
-      <label for="costumeInput">Your costume</label>
-      <input type="text" id="costumeInput" placeholder="e.g. Zombie Bride" maxlength="60">
-      <label for="genderInput">Category</label>
-      <select id="genderInput">
-        <option value="">Choose one…</option>
-        <option value="male">Male</option>
-        <option value="female">Female</option>
-      </select>
-      <div class="hint">Used to place solo entries in Individual Male or Individual Female.</div>
-      <label for="groupInput">Duo / group costume name (optional)</label>
-      <input type="text" id="groupInput" placeholder="e.g. Ghostbusters Crew" maxlength="60">
-      <div class="hint">Everyone in your couple or group should type this exact same name — that's how we know you're together, even if we don't know each other.</div>
-      <button id="registerBtn">Check In</button>
-      <div class="msg" id="registerMsg"></div>
-    </div>
-    <div class="card" style="text-align:center;">
-      <label style="text-align:center;">Share this to let others check in</label>
-      <div class="qr-box"><div id="qrcode"></div></div>
-      <div class="qr-link" id="qrLink"></div>
-    </div>
-  </div>
+      <form class="slip" id="registerForm" novalidate>
+        <h2 class="title">Check in</h2>
+        <label for="nameInput">Your name</label>
+        <input type="text" id="nameInput" placeholder="e.g. Jordan" maxlength="40" autocomplete="given-name">
+        <label for="costumeInput">Your costume</label>
+        <input type="text" id="costumeInput" placeholder="e.g. Zombie Bride" maxlength="60">
+        <label for="genderInput">Gender</label>
+        <select id="genderInput">
+          <option value="">Choose one…</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+        <div class="hint">Used to place solo entries in Individual Male or Individual Female.</div>
+        <label for="groupInput">Duo / group costume name (optional)</label>
+        <select id="groupSelect"><option value="">None — I'm solo</option></select>
+        <input type="text" id="groupInput" placeholder="New group name, e.g. Ghostbusters Crew" maxlength="60" hidden>
+        <div class="hint">Pick your group if someone in it has already checked in. Otherwise choose &lt;Add New&gt; and name it — everyone in your couple or group picks that same group.</div>
+        <button type="submit" class="btn" id="registerBtn">Check In</button>
+        <div class="msg" id="registerMsg" role="alert"></div>
+      </form>
 
-  <div id="vote-panel" style="display:none;">
-    <div class="subtabs" id="categoryTabs"></div>
-    <div class="card"><div id="voteList"></div><div class="msg" id="voteMsg"></div></div>
-  </div>
+      <div class="slip share">
+        <label>Share this to let others check in</label>
+        <div class="qr-box"><div id="qrcode"></div></div>
+        <div class="qr-link" id="qrLink"></div>
+      </div>
+    </section>
 
-  <div id="results-panel" style="display:none;">
-    <div class="card"><div id="resultsList"></div></div>
-    <button class="secondary" id="refreshResults">Refresh</button>
-  </div>
+    <section id="vote-panel" class="panel" hidden>
+      <div class="ballot"><span>YOUR BALLOT</span><span id="ballotCount"></span></div>
+      <div class="dividers" id="categoryTabs" role="tablist" aria-label="Categories"></div>
+      <div class="shelf" id="voteList"></div>
+    </section>
+  </main>
+  <footer class="devfoot">
+    <button type="button" class="devtoggle" id="devToggle" role="switch" aria-checked="false"><span class="knob" aria-hidden="true"></span>Dev Test Mode</button>
+  </footer>
 </div>
 
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<nav class="nav" aria-label="Sections">
+  <div class="nav-inner">
+    <button type="button" data-tab="register"><svg class="icon"><use href="#i-slip"/></svg>Check In</button>
+    <button type="button" data-tab="vote"><svg class="icon"><use href="#i-tape"/></svg>Vote</button>
+    <a href="results.html"><svg class="icon"><use href="#i-trophy"/></svg>Results</a>
+  </div>
+</nav>
+
+<script src="shared.js"></script>
 <script>
-// ---- Fill these in from your Supabase project (Settings → API) ----
-const SUPABASE_URL = "https://rxcgwuduvnfycrjhvgbu.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_I-eXfzk5HEwkdZ2YAHIwjw_5o8SqYDl";
-// ---------------------------------------------------------------------
+// ---------- VCR clock ----------
+(function(){
+  const el = document.getElementById('clock'); const t0 = Date.now();
+  const p = n => String(n).padStart(2,'0');
+  setInterval(() => { const s = Math.floor((Date.now()-t0)/1000); el.textContent = `${p(Math.floor(s/3600))}:${p(Math.floor(s/60)%60)}:${p(s%60)}`; }, 1000);
+})();
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// ---------- Persistent storage (cookie + localStorage mirror) ----------
-const COOKIE_MAX_AGE = 60*60*24*365; // 1 year
-function readCookie(key){
-  const m = document.cookie.split('; ').find(r => r.startsWith(key + '='));
-  return m ? decodeURIComponent(m.slice(key.length + 1)) : null;
+// ---------- Toast ----------
+let toastTimer;
+function toast(msg, isErr){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast show' + (isErr ? ' err' : '');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
 }
-function readStore(key){
-  let v = readCookie(key);
-  if(v === null){ try{ v = localStorage.getItem(key); }catch(e){} }
-  if(v !== null) writeStore(key, v); // re-sync so both copies survive
-  return v;
-}
-function writeStore(key, value){
-  document.cookie = `${key}=${encodeURIComponent(value)}; max-age=${COOKIE_MAX_AGE}; path=/; SameSite=Lax`;
-  try{ localStorage.setItem(key, value); }catch(e){}
-}
-function readJson(key){ try{ return JSON.parse(readStore(key)); }catch(e){ return null; } }
-
-function getDeviceId(){
-  let id = readStore('costume-contest-device-id');
-  if(!id){ id = 'd_' + crypto.randomUUID(); writeStore('costume-contest-device-id', id); }
-  return id;
-}
-// { entryId, teamId, name, costume } once this device has checked in
-function getRegistration(){ return readJson('costume-contest-registration'); }
-function setRegistration(r){ writeStore('costume-contest-registration', JSON.stringify(r)); }
-// { [categoryId]: contestantId } of votes this device has cast
-function getLocalVotes(){ return readJson('costume-contest-votes') || {}; }
-function setLocalVote(categoryId, contestantId){
-  const v = getLocalVotes(); v[categoryId] = contestantId;
-  writeStore('costume-contest-votes', JSON.stringify(v));
-}
-function isOwnContestant(c){
-  const r = getRegistration();
-  if(!r) return false;
-  return (c.type === 'entry' && c.id === r.entryId) || (c.type === 'team' && r.teamId && c.id === r.teamId);
-}
-function normalize(s){ return s.trim().toLowerCase().replace(/\s+/g,' '); }
-function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // ---------- Tabs ----------
-const tabs = document.querySelectorAll('.tab');
-const panels = { register: document.getElementById('register-panel'), vote: document.getElementById('vote-panel'), results: document.getElementById('results-panel') };
-tabs.forEach(t => t.addEventListener('click', () => {
-  tabs.forEach(x => x.classList.remove('active'));
-  t.classList.add('active');
-  Object.keys(panels).forEach(k => panels[k].style.display = 'none');
-  panels[t.dataset.tab].style.display = 'block';
-  if(t.dataset.tab === 'vote') loadCategoriesAndVotePanel();
-  if(t.dataset.tab === 'results') loadResults();
-}));
+const tabBtns = document.querySelectorAll('.nav [data-tab]');
+const panels = { register: document.getElementById('register-panel'), vote: document.getElementById('vote-panel') };
+let activeTab = 'register';
+function showTab(name){
+  activeTab = name;
+  tabBtns.forEach(b => { const on = b.dataset.tab === name; b.classList.toggle('active', on); on ? b.setAttribute('aria-current','page') : b.removeAttribute('aria-current'); });
+  Object.keys(panels).forEach(k => { panels[k].hidden = k !== name; });
+  if(name === 'vote') loadCategoriesAndVotePanel();
+  history.replaceState(null, '', name === 'vote' ? '#vote' : location.pathname + location.search);
+  window.scrollTo(0, 0);
+}
+tabBtns.forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
 
 try{
-  new QRCode(document.getElementById('qrcode'), { text: window.location.href, width: 160, height: 160, colorDark: "#150f1e", colorLight: "#ffffff" });
+  new QRCode(document.getElementById('qrcode'), { text: location.origin + location.pathname, width: 168, height: 168, colorDark: "#0c0a0a", colorLight: "#efe9dc" });
 }catch(e){}
-document.getElementById('qrLink').textContent = window.location.href;
+document.getElementById('qrLink').textContent = location.origin + location.pathname;
 
 // ---------- Check-in ----------
-document.getElementById('registerBtn').addEventListener('click', async () => {
+document.getElementById('registerForm').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
   const nameEl = document.getElementById('nameInput');
   const costumeEl = document.getElementById('costumeInput');
   const groupEl = document.getElementById('groupInput');
+  const groupSel = document.getElementById('groupSelect');
   const gender = document.getElementById('genderInput').value;
   const msgEl = document.getElementById('registerMsg');
   const name = nameEl.value.trim();
   const costume = costumeEl.value.trim();
-  const groupName = groupEl.value.trim();
-  if(!name || !costume || !gender){
-    msgEl.textContent = 'Enter a name, a costume and a category.';
-    msgEl.className = 'msg err';
+  const groupName = groupSel.value === NEW_GROUP ? groupEl.value.trim() : groupSel.value;
+  if(!name || !costume || !gender || (groupSel.value === NEW_GROUP && !groupName)){
+    msgEl.textContent = 'Enter a name, a costume, a gender and, for a new group, its name.';
     return;
   }
+  msgEl.textContent = '';
   const btn = document.getElementById('registerBtn');
   btn.disabled = true; btn.textContent = 'Checking in...';
   try{
@@ -204,85 +155,99 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
     const { data: entry, error } = await sb.from('entries').insert({ name, costume, gender, team_id: teamId }).select('id').single();
     if(error) throw error;
     setRegistration({ entryId: entry.id, teamId, name, costume });
-    nameEl.value = ''; costumeEl.value = ''; groupEl.value = ''; document.getElementById('genderInput').value = '';
+    nameEl.value = ''; costumeEl.value = ''; groupEl.value = ''; groupSel.value = ''; syncGroupInput(); document.getElementById('genderInput').value = '';
     showRegistrationState();
+    loadGroups();
+    toast('Checked in. Time to vote!');
+    showTab('vote');
   }catch(e){
     msgEl.textContent = 'Something went wrong — try again.';
-    msgEl.className = 'msg err';
   }
   btn.disabled = false; btn.textContent = 'Check In';
 });
 
+// ---------- Groups ----------
+const NEW_GROUP = '__new__';
+function syncGroupInput(){
+  const el = document.getElementById('groupInput');
+  el.hidden = document.getElementById('groupSelect').value !== NEW_GROUP;
+  if(!el.hidden) el.focus();
+}
+document.getElementById('groupSelect').addEventListener('change', syncGroupInput);
+async function loadGroups(){
+  const { data } = await sb.from('teams').select('display_name').order('display_name');
+  const sel = document.getElementById('groupSelect');
+  const keep = sel.value;
+  sel.innerHTML = '';
+  const add = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o); };
+  add('', "None — I'm solo");
+  (data || []).forEach(t => add(t.display_name, t.display_name));
+  add(NEW_GROUP, '<Add New>');
+  if([...sel.options].some(o => o.value === keep)) sel.value = keep;
+}
+
 function showRegistrationState(){
   const r = getRegistration();
-  document.getElementById('registerForm').style.display = r ? 'none' : 'block';
-  const done = document.getElementById('registeredCard');
-  done.style.display = r ? 'block' : 'none';
-  if(r) document.getElementById('registeredText').textContent = `You're checked in as ${r.name} — ${r.costume}. Good luck!`;
+  document.getElementById('registerForm').hidden = !!r;
+  document.getElementById('registeredCard').hidden = !r;
+  if(r){
+    document.getElementById('registeredName').textContent = r.name;
+    document.getElementById('registeredText').textContent = `${r.costume}. Good luck!`;
+  }
+  document.getElementById('newGuestBtn').hidden = !(r && isDevMode());
 }
 showRegistrationState();
+loadGroups();
 
-// ---------- Shared data load ----------
-async function loadAll(){
-  const [{data: entries}, {data: teams}, {data: categories}, {data: votes}] = await Promise.all([
-    sb.from('entries').select('id,name,costume,gender,team_id'),
-    sb.from('teams').select('id,display_name'),
-    sb.from('categories').select('id,name,kind,sort_order').order('sort_order'),
-    sb.from('votes').select('device_id,category_id,entry_id,team_id')
-  ]);
-  return { entries: entries||[], teams: teams||[], categories: categories||[], votes: votes||[] };
+// ---------- Dev Test Mode toggle ----------
+function syncDevUi(){
+  const on = isDevMode();
+  document.getElementById('devBanner').hidden = !on;
+  const t = document.getElementById('devToggle');
+  t.setAttribute('aria-checked', on ? 'true' : 'false');
+  t.classList.toggle('on', on);
 }
-
-function buildContestants(kind, state){
-  const { entries, teams } = state;
-  const sizeByTeam = {};
-  entries.forEach(e => { if(e.team_id) sizeByTeam[e.team_id] = (sizeByTeam[e.team_id]||0)+1; });
-  const teamContestants = teams.map(t => {
-    const members = entries.filter(e => e.team_id === t.id);
-    const size = members.length;
-    return { type:'team', id:t.id, label:t.display_name, sub: members.map(m=>m.name).join(', ') + (members[0]? ' — ' + members[0].costume : ''), tag: size===2 ? 'Duo' : 'Group', size };
-  });
-  const soloBy = g => entries.filter(e => !e.team_id && e.gender === g).map(e => ({ type:'entry', id:e.id, label:e.name, sub:e.costume, tag:null }));
-  if(kind==='individual_male') return soloBy('male');
-  if(kind==='individual_female') return soloBy('female');
-  if(kind==='duo') return teamContestants.filter(t => t.size===2);
-  if(kind==='group') return teamContestants.filter(t => t.size>=3);
-  return [];
-}
-
-function withCounts(contestants, categoryId, votes){
-  const map = {};
-  votes.filter(v => v.category_id === categoryId).forEach(v => {
-    const key = v.entry_id || v.team_id;
-    map[key] = (map[key]||0) + 1;
-  });
-  return contestants.map(c => ({ ...c, votes: map[c.id] || 0 }));
-}
+document.getElementById('devToggle').addEventListener('click', () => {
+  setDevMode(!isDevMode());
+  syncDevUi(); showRegistrationState();
+  if(activeTab === 'vote') loadCategoriesAndVotePanel();
+  toast(isDevMode() ? 'Dev Test Mode on: nothing is saved to this device.' : 'Dev Test Mode off.');
+});
+document.getElementById('newGuestBtn').addEventListener('click', () => {
+  Object.keys(memStore).forEach(k => delete memStore[k]);
+  showRegistrationState(); showTab('register');
+});
+syncDevUi();
 
 // ---------- Vote panel ----------
 let currentState = null;
 let currentCategoryId = null;
+const CHECK = '<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>';
 
 async function loadCategoriesAndVotePanel(){
   currentState = await loadAll();
+  const cats = currentState.categories;
+  if(!cats.some(c => c.id === currentCategoryId)) currentCategoryId = cats.length ? cats[0].id : null;
+  renderCategoryTabs();
+  const cat = cats.find(c => c.id === currentCategoryId);
+  if(cat) renderVoteList(cat);
+  else document.getElementById('voteList').innerHTML = '<div class="empty">No categories are set up yet.</div>';
+}
+
+function renderCategoryTabs(){
   const tabsEl = document.getElementById('categoryTabs');
+  const local = getLocalVotes();
   tabsEl.innerHTML = '';
-  currentState.categories.forEach((cat, i) => {
-    const el = document.createElement('div');
-    el.className = 'subtab' + (i===0 ? ' active' : '');
-    el.textContent = cat.name;
-    el.addEventListener('click', () => {
-      document.querySelectorAll('.subtab').forEach(x => x.classList.remove('active'));
-      el.classList.add('active');
-      currentCategoryId = cat.id;
-      renderVoteList(cat);
-    });
+  currentState.categories.forEach(cat => {
+    const el = document.createElement('button');
+    el.type = 'button'; el.className = 'divider'; el.setAttribute('role','tab');
+    el.setAttribute('aria-selected', cat.id === currentCategoryId ? 'true' : 'false');
+    el.innerHTML = `<span>${escapeHtml(cat.name)}</span>${local[cat.id] ? CHECK : ''}`;
+    el.addEventListener('click', () => { currentCategoryId = cat.id; renderCategoryTabs(); renderVoteList(cat); });
     tabsEl.appendChild(el);
   });
-  if(currentState.categories.length){
-    currentCategoryId = currentState.categories[0].id;
-    renderVoteList(currentState.categories[0]);
-  }
+  const done = currentState.categories.filter(c => local[c.id]).length;
+  document.getElementById('ballotCount').innerHTML = `<b>${done}</b> OF ${currentState.categories.length} VOTED`;
 }
 
 async function getMyVote(categoryId){
@@ -293,114 +258,60 @@ async function getMyVote(categoryId){
 
 async function renderVoteList(category){
   const listEl = document.getElementById('voteList');
-  const msgEl = document.getElementById('voteMsg');
-  msgEl.textContent = '';
-  listEl.innerHTML = '<div class="empty">Loading entries...</div>';
   const contestants = withCounts(buildContestants(category.kind, currentState), category.id, currentState.votes);
   if(contestants.length === 0){
     listEl.innerHTML = `<div class="empty">No entries eligible for ${escapeHtml(category.name)} yet.</div>`;
     return;
   }
   const myVote = await getMyVote(category.id);
+  if(category.id !== currentCategoryId) return; // user moved on while we were fetching
   listEl.innerHTML = '';
   contestants.forEach(c => {
-    const row = document.createElement('div');
     const own = isOwnContestant(c);
-    row.className = 'entry' + (myVote === c.id ? ' voted' : '') + (own ? ' own' : '');
-    row.innerHTML = `<div><div class="name">${myVote === c.id ? '<span class="crown">✅</span>' : ''}${escapeHtml(c.label)}${c.tag ? `<span class="tag">${c.tag}</span>` : ''}${own ? '<span class="tag">You</span>' : ''}</div><div class="costume">${escapeHtml(c.sub)}</div></div>`;
+    const voted = myVote === c.id;
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = `tape t${spineTone(c.id)}` + (voted ? ' voted' : '') + (own ? ' own' : '') + (c.photo ? ' hasphoto' : '');
+    row.setAttribute('aria-pressed', voted ? 'true' : 'false');
+    const state = voted ? `<span class="stamp">${CHECK}Voted</span>` : own ? 'You' : 'Vote';
+    row.innerHTML = (c.photo ? `<img class="photo" src="${escapeHtml(c.photo)}" alt="${escapeHtml(c.label)}'s costume" loading="lazy">` : '') + `<span class="body"><span class="name">${escapeHtml(c.label)}${c.tag ? `<span class="tag">${c.tag}</span>` : ''}</span><span class="costume">${escapeHtml(c.sub)}</span></span><span class="state">${state}</span>`;
     row.addEventListener('click', async () => {
-      if(own){
-        msgEl.textContent = "You can't vote for yourself!";
-        msgEl.className = 'msg err';
-        return;
-      }
+      if(own && !isDevMode()){ toast("You can't vote for yourself!", true); return; }
       const reg = getRegistration();
-      if(!reg){
-        msgEl.textContent = 'Check in first so we know who is voting.';
-        msgEl.className = 'msg err';
-        return;
-      }
+      if(!reg){ toast('Check in first so we know who is voting.', true); return; }
+      if(voted && !isDevMode()) return;
       try{
         const payload = { device_id: getDeviceId(), voter_entry_id: reg.entryId, category_id: category.id, entry_id: c.type==='entry' ? c.id : null, team_id: c.type==='team' ? c.id : null };
         const { error } = await sb.from('votes').upsert(payload, { onConflict: 'device_id,category_id' });
         if(error) throw error;
         setLocalVote(category.id, c.id);
-        msgEl.textContent = `Voted for ${c.label} in ${category.name}!`;
-        msgEl.className = 'msg';
+        toast(`Voted for ${c.label} in ${category.name}!`);
         currentState = await loadAll();
+        renderCategoryTabs();
         renderVoteList(category);
       }catch(e){
-        msgEl.textContent = 'Vote failed — try again.';
-        msgEl.className = 'msg err';
+        toast('Vote failed — try again.', true);
       }
     });
     listEl.appendChild(row);
   });
 }
 
-// ---------- Results panel ----------
-function renderLeaderboard(title, contestants, gold){
-  const wrap = document.createElement('div');
-  const h = document.createElement('div');
-  h.className = 'section-title';
-  h.textContent = title;
-  wrap.appendChild(h);
-  if(contestants.length === 0){
-    const e = document.createElement('div');
-    e.className = 'empty';
-    e.textContent = 'No entries yet.';
-    wrap.appendChild(e);
-    return wrap;
-  }
-  const sorted = [...contestants].sort((a,b) => b.votes - a.votes);
-  const maxVotes = Math.max(1, sorted[0].votes);
-  sorted.forEach((c, i) => {
-    const row = document.createElement('div');
-    row.className = 'bar-row';
-    const pct = Math.round((c.votes / maxVotes) * 100);
-    row.innerHTML = `<div class="top"><span>${i===0 && c.votes>0 ? '<span class="crown">👑</span>' : ''}${escapeHtml(c.label)} — ${escapeHtml(c.sub)}</span><span class="n">${c.votes}</span></div><div class="bar-track"><div class="bar-fill${gold?' gold':''}" style="width:${pct}%"></div></div>`;
-    wrap.appendChild(row);
-  });
-  return wrap;
-}
-
-async function loadResults(){
-  const listEl = document.getElementById('resultsList');
-  listEl.innerHTML = '<div class="empty">Loading results...</div>';
-  const state = await loadAll();
-  listEl.innerHTML = '';
-
-  // Best Overall: not a category — total votes per contestant, summed across ALL categories.
-  const overallTotals = {};
-  state.votes.forEach(v => {
-    const key = v.entry_id ? 'e_' + v.entry_id : 't_' + v.team_id;
-    overallTotals[key] = (overallTotals[key] || 0) + 1;
-  });
-  const solo = state.entries.filter(e => !e.team_id).map(e => ({ id: 'e_'+e.id, label: e.name, sub: e.costume, votes: overallTotals['e_'+e.id] || 0 }));
-  const teamOverall = state.teams.map(t => {
-    const members = state.entries.filter(e => e.team_id === t.id);
-    return { id: 't_'+t.id, label: t.display_name, sub: members.map(m=>m.name).join(', '), votes: overallTotals['t_'+t.id] || 0 };
-  });
-  listEl.appendChild(renderLeaderboard('🏆 Best Overall', [...solo, ...teamOverall], true));
-
-  state.categories.forEach(cat => {
-    const contestants = withCounts(buildContestants(cat.kind, state), cat.id, state.votes);
-    listEl.appendChild(renderLeaderboard(cat.name, contestants, false));
-  });
-}
-document.getElementById('refreshResults').addEventListener('click', loadResults);
-
 // ---------- Live updates ----------
+let refreshTimer;
+function refreshVisible(){
+  if(activeTab !== 'vote') return;
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(loadCategoriesAndVotePanel, 400);
+}
 sb.channel('costume-contest-changes')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'entries' }, refreshVisible)
-  .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, refreshVisible)
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, () => { loadGroups(); refreshVisible(); })
   .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, refreshVisible)
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'contestant_photos' }, refreshVisible)
   .subscribe();
 
-function refreshVisible(){
-  if(panels.vote.style.display !== 'none') loadCategoriesAndVotePanel();
-  if(panels.results.style.display !== 'none') loadResults();
-}
+showTab(location.hash === '#vote' || getRegistration() ? 'vote' : 'register');
 </script>
 </body>
 </html>
