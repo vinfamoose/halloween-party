@@ -32,7 +32,8 @@
   label{display:block;font-family:-apple-system,sans-serif;font-size:0.78rem;color:var(--bone-dim);margin-bottom:6px;}
   .hint{font-family:-apple-system,sans-serif;font-size:0.72rem;color:var(--bone-dim);margin:-10px 0 14px;}
   input[type=text]{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:11px 12px;color:var(--bone);font-family:-apple-system,sans-serif;font-size:0.95rem;margin-bottom:14px;}
-  input[type=text]:focus{outline:none;border-color:var(--pumpkin);}
+  input[type=text]:focus,select:focus{outline:none;border-color:var(--pumpkin);}
+  select{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:11px 12px;color:var(--bone);font-family:-apple-system,sans-serif;font-size:0.95rem;margin-bottom:14px;}
   button{width:100%;background:var(--pumpkin);color:#1a0f08;border:none;border-radius:8px;padding:12px;font-family:-apple-system,sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;}
   button:disabled{opacity:0.5;}
   button.secondary{background:transparent;border:1px solid var(--line);color:var(--bone);}
@@ -40,6 +41,7 @@
   .qr-link{text-align:center;font-family:-apple-system,sans-serif;font-size:0.72rem;color:var(--bone-dim);word-break:break-all;}
   .entry{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;}
   .entry.voted{border-color:var(--rot);}
+  .entry.own{opacity:0.5;cursor:not-allowed;}
   .entry .name{font-weight:700;font-size:0.95rem;}
   .entry .costume{font-family:-apple-system,sans-serif;font-size:0.78rem;color:var(--bone-dim);}
   .tag{display:inline-block;font-family:-apple-system,sans-serif;font-size:0.65rem;font-weight:700;color:var(--violet);border:1px solid var(--violet);border-radius:10px;padding:1px 6px;margin-left:6px;vertical-align:middle;}
@@ -68,12 +70,23 @@
   </div>
 
   <div id="register-panel">
-    <div class="card">
+    <div class="card" id="registeredCard" style="display:none;text-align:center;">
+      <div class="section-title">✅ Checked in</div>
+      <div id="registeredText"></div>
+    </div>
+    <div class="card" id="registerForm">
       <label for="nameInput">Your name</label>
       <input type="text" id="nameInput" placeholder="e.g. Jordan" maxlength="40">
       <label for="costumeInput">Your costume</label>
       <input type="text" id="costumeInput" placeholder="e.g. Zombie Bride" maxlength="60">
-      <label for="groupInput">Couple / group costume name (optional)</label>
+      <label for="genderInput">Category</label>
+      <select id="genderInput">
+        <option value="">Choose one…</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+      </select>
+      <div class="hint">Used to place solo entries in Individual Male or Individual Female.</div>
+      <label for="groupInput">Duo / group costume name (optional)</label>
       <input type="text" id="groupInput" placeholder="e.g. Ghostbusters Crew" maxlength="60">
       <div class="hint">Everyone in your couple or group should type this exact same name — that's how we know you're together, even if we don't know each other.</div>
       <button id="registerBtn">Check In</button>
@@ -105,10 +118,42 @@ const SUPABASE_ANON_KEY = "sb_publishable_I-eXfzk5HEwkdZ2YAHIwjw_5o8SqYDl";
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// ---------- Persistent storage (cookie + localStorage mirror) ----------
+const COOKIE_MAX_AGE = 60*60*24*365; // 1 year
+function readCookie(key){
+  const m = document.cookie.split('; ').find(r => r.startsWith(key + '='));
+  return m ? decodeURIComponent(m.slice(key.length + 1)) : null;
+}
+function readStore(key){
+  let v = readCookie(key);
+  if(v === null){ try{ v = localStorage.getItem(key); }catch(e){} }
+  if(v !== null) writeStore(key, v); // re-sync so both copies survive
+  return v;
+}
+function writeStore(key, value){
+  document.cookie = `${key}=${encodeURIComponent(value)}; max-age=${COOKIE_MAX_AGE}; path=/; SameSite=Lax`;
+  try{ localStorage.setItem(key, value); }catch(e){}
+}
+function readJson(key){ try{ return JSON.parse(readStore(key)); }catch(e){ return null; } }
+
 function getDeviceId(){
-  let id = localStorage.getItem('costume-contest-device-id');
-  if(!id){ id = 'd_' + crypto.randomUUID(); localStorage.setItem('costume-contest-device-id', id); }
+  let id = readStore('costume-contest-device-id');
+  if(!id){ id = 'd_' + crypto.randomUUID(); writeStore('costume-contest-device-id', id); }
   return id;
+}
+// { entryId, teamId, name, costume } once this device has checked in
+function getRegistration(){ return readJson('costume-contest-registration'); }
+function setRegistration(r){ writeStore('costume-contest-registration', JSON.stringify(r)); }
+// { [categoryId]: contestantId } of votes this device has cast
+function getLocalVotes(){ return readJson('costume-contest-votes') || {}; }
+function setLocalVote(categoryId, contestantId){
+  const v = getLocalVotes(); v[categoryId] = contestantId;
+  writeStore('costume-contest-votes', JSON.stringify(v));
+}
+function isOwnContestant(c){
+  const r = getRegistration();
+  if(!r) return false;
+  return (c.type === 'entry' && c.id === r.entryId) || (c.type === 'team' && r.teamId && c.id === r.teamId);
 }
 function normalize(s){ return s.trim().toLowerCase().replace(/\s+/g,' '); }
 function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -135,12 +180,13 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
   const nameEl = document.getElementById('nameInput');
   const costumeEl = document.getElementById('costumeInput');
   const groupEl = document.getElementById('groupInput');
+  const gender = document.getElementById('genderInput').value;
   const msgEl = document.getElementById('registerMsg');
   const name = nameEl.value.trim();
   const costume = costumeEl.value.trim();
   const groupName = groupEl.value.trim();
-  if(!name || !costume){
-    msgEl.textContent = 'Enter both a name and a costume.';
+  if(!name || !costume || !gender){
+    msgEl.textContent = 'Enter a name, a costume and a category.';
     msgEl.className = 'msg err';
     return;
   }
@@ -155,11 +201,11 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
       if(teamErr) throw teamErr;
       teamId = team.id;
     }
-    const { error } = await sb.from('entries').insert({ name, costume, team_id: teamId });
+    const { data: entry, error } = await sb.from('entries').insert({ name, costume, gender, team_id: teamId }).select('id').single();
     if(error) throw error;
-    msgEl.textContent = `You're in, ${name}! Good luck.`;
-    msgEl.className = 'msg';
-    nameEl.value = ''; costumeEl.value = ''; groupEl.value = '';
+    setRegistration({ entryId: entry.id, teamId, name, costume });
+    nameEl.value = ''; costumeEl.value = ''; groupEl.value = ''; document.getElementById('genderInput').value = '';
+    showRegistrationState();
   }catch(e){
     msgEl.textContent = 'Something went wrong — try again.';
     msgEl.className = 'msg err';
@@ -167,10 +213,19 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
   btn.disabled = false; btn.textContent = 'Check In';
 });
 
+function showRegistrationState(){
+  const r = getRegistration();
+  document.getElementById('registerForm').style.display = r ? 'none' : 'block';
+  const done = document.getElementById('registeredCard');
+  done.style.display = r ? 'block' : 'none';
+  if(r) document.getElementById('registeredText').textContent = `You're checked in as ${r.name} — ${r.costume}. Good luck!`;
+}
+showRegistrationState();
+
 // ---------- Shared data load ----------
 async function loadAll(){
   const [{data: entries}, {data: teams}, {data: categories}, {data: votes}] = await Promise.all([
-    sb.from('entries').select('id,name,costume,team_id'),
+    sb.from('entries').select('id,name,costume,gender,team_id'),
     sb.from('teams').select('id,display_name'),
     sb.from('categories').select('id,name,kind,sort_order').order('sort_order'),
     sb.from('votes').select('device_id,category_id,entry_id,team_id')
@@ -182,16 +237,16 @@ function buildContestants(kind, state){
   const { entries, teams } = state;
   const sizeByTeam = {};
   entries.forEach(e => { if(e.team_id) sizeByTeam[e.team_id] = (sizeByTeam[e.team_id]||0)+1; });
-  const solo = entries.filter(e => !e.team_id).map(e => ({ type:'entry', id:e.id, label:e.name, sub:e.costume, tag:null }));
   const teamContestants = teams.map(t => {
     const members = entries.filter(e => e.team_id === t.id);
     const size = members.length;
-    return { type:'team', id:t.id, label:t.display_name, sub: members.map(m=>m.name).join(', ') + (members[0]? ' — ' + members[0].costume : ''), tag: size===2 ? 'Couple' : 'Group', size };
+    return { type:'team', id:t.id, label:t.display_name, sub: members.map(m=>m.name).join(', ') + (members[0]? ' — ' + members[0].costume : ''), tag: size===2 ? 'Duo' : 'Group', size };
   });
-  if(kind==='individual') return solo;
-  if(kind==='couples') return teamContestants.filter(t => t.size===2);
+  const soloBy = g => entries.filter(e => !e.team_id && e.gender === g).map(e => ({ type:'entry', id:e.id, label:e.name, sub:e.costume, tag:null }));
+  if(kind==='individual_male') return soloBy('male');
+  if(kind==='individual_female') return soloBy('female');
+  if(kind==='duo') return teamContestants.filter(t => t.size===2);
   if(kind==='group') return teamContestants.filter(t => t.size>=3);
-  if(kind==='open') return [...solo, ...teamContestants];
   return [];
 }
 
@@ -232,8 +287,8 @@ async function loadCategoriesAndVotePanel(){
 
 async function getMyVote(categoryId){
   const { data } = await sb.from('votes').select('entry_id, team_id').eq('device_id', getDeviceId()).eq('category_id', categoryId).maybeSingle();
-  if(!data) return null;
-  return data.entry_id || data.team_id;
+  if(data) return data.entry_id || data.team_id;
+  return getLocalVotes()[categoryId] || null;
 }
 
 async function renderVoteList(category){
@@ -250,12 +305,26 @@ async function renderVoteList(category){
   listEl.innerHTML = '';
   contestants.forEach(c => {
     const row = document.createElement('div');
-    row.className = 'entry' + (myVote === c.id ? ' voted' : '');
-    row.innerHTML = `<div><div class="name">${myVote === c.id ? '<span class="crown">✅</span>' : ''}${escapeHtml(c.label)}${c.tag ? `<span class="tag">${c.tag}</span>` : ''}</div><div class="costume">${escapeHtml(c.sub)}</div></div>`;
+    const own = isOwnContestant(c);
+    row.className = 'entry' + (myVote === c.id ? ' voted' : '') + (own ? ' own' : '');
+    row.innerHTML = `<div><div class="name">${myVote === c.id ? '<span class="crown">✅</span>' : ''}${escapeHtml(c.label)}${c.tag ? `<span class="tag">${c.tag}</span>` : ''}${own ? '<span class="tag">You</span>' : ''}</div><div class="costume">${escapeHtml(c.sub)}</div></div>`;
     row.addEventListener('click', async () => {
+      if(own){
+        msgEl.textContent = "You can't vote for yourself!";
+        msgEl.className = 'msg err';
+        return;
+      }
+      const reg = getRegistration();
+      if(!reg){
+        msgEl.textContent = 'Check in first so we know who is voting.';
+        msgEl.className = 'msg err';
+        return;
+      }
       try{
-        const payload = { device_id: getDeviceId(), category_id: category.id, entry_id: c.type==='entry' ? c.id : null, team_id: c.type==='team' ? c.id : null };
-        await sb.from('votes').upsert(payload, { onConflict: 'device_id,category_id' });
+        const payload = { device_id: getDeviceId(), voter_entry_id: reg.entryId, category_id: category.id, entry_id: c.type==='entry' ? c.id : null, team_id: c.type==='team' ? c.id : null };
+        const { error } = await sb.from('votes').upsert(payload, { onConflict: 'device_id,category_id' });
+        if(error) throw error;
+        setLocalVote(category.id, c.id);
         msgEl.textContent = `Voted for ${c.label} in ${category.name}!`;
         msgEl.className = 'msg';
         currentState = await loadAll();

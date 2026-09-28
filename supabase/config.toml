@@ -1,0 +1,3 @@
+# Minimal config so the Supabase GitHub integration finds this directory.
+# project_id is only used by the local CLI; the linked remote project is set in the dashboard.
+project_id = "halloween-party"
