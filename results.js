@@ -46,7 +46,10 @@ function panel(panelKey, title, icon, contestants, limit){
 
 async function loadResults(){
   let state;
-  try{ state = await loadAll(); }catch(e){ return; }
+  try{ state = await loadAll(); }catch(e){
+    if(!document.querySelector('.reel')) document.getElementById('cats').innerHTML = '<div class="empty">Could not load results. Retrying…</div>';
+    return;
+  }
   const catsEl = document.getElementById('cats');
   catsEl.innerHTML = state.categories.length ? '' : '<div class="empty">No categories are set up yet.</div>';
   state.categories.forEach(cat => {
