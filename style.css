@@ -200,24 +200,17 @@ body.results{padding:0 16px 40px;}
   body.display .sign .aside{text-align:right;}
   body.display .sign p{font-size:clamp(1rem,1.3vw,1.6rem);}
   body.display .osd{font-size:clamp(1.5rem,2vw,2.6rem);justify-content:flex-end;gap:2vw;margin-bottom:1vh;}
-  body.display .board{max-width:none;width:100%;flex:1;min-height:0;grid-template-columns:1.05fr 1.4fr;gap:3vw;align-items:stretch;}
-  body.display .board .overall{background:var(--shelf);border:1px solid var(--line);border-top:6px solid var(--yellow);padding:2vh 2vw;min-height:0;overflow:hidden;}
-  body.display .board .overall h2{font-size:clamp(1.8rem,2.6vw,3.4rem);margin-bottom:2vh;}
+  body.display .board{max-width:none;width:100%;flex:1;min-height:0;grid-template-columns:1fr;gap:3vw;align-items:stretch;}
   body.display .board .cats{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:2.4vh 2.4vw;min-height:0;}
   body.display .board .cats .reel{background:var(--shelf);border:1px solid var(--line);padding:1.8vh 1.4vw;min-height:0;overflow:hidden;}
   body.display .board .cats .reel h2{font-size:clamp(1.3rem,1.8vw,2.4rem);margin-bottom:1.4vh;}
   body.display .rows{gap:1.6vh;}
-  body.display .overall .rows{gap:2vh;}
   body.display .row{grid-template-columns:clamp(2rem,3vw,4rem) 1fr auto;}
   body.display .row .rank{font-size:clamp(1.5rem,2.2vw,3rem);}
   body.display .row .who{font-size:clamp(1rem,1.2vw,1.6rem);}
   body.display .row .who b{font-size:clamp(1.2rem,1.7vw,2.3rem);}
   body.display .row .n{font-size:clamp(1.5rem,2.2vw,3rem);}
   body.display .row .track{height:clamp(12px,1.6vh,20px);}
-  body.display .overall .row:first-child .who b{font-size:clamp(2rem,3.6vw,5rem);display:block;line-height:1;margin:0 0 .3vh;}
-  body.display .overall .row:first-child .who span{font-size:clamp(1.1rem,1.5vw,2rem);}
-  body.display .overall .row:first-child .rank,body.display .overall .row:first-child .n{font-size:clamp(3rem,5vw,7rem);}
-  body.display .overall .row:first-child .track{height:clamp(18px,2.6vh,32px);}
   body.display .host-bar{display:none;}
 }
 
@@ -252,8 +245,6 @@ body.results{padding:0 16px 40px;}
 @media (min-width:1000px){
   body.display .row.hasphoto{grid-template-columns:clamp(2rem,3vw,4rem) clamp(44px,3.4vw,80px) 1fr auto;}
   body.display .row .avatar{width:clamp(44px,3.4vw,80px);height:clamp(56px,4.4vw,104px);}
-  body.display .overall .row:first-child.hasphoto{grid-template-columns:clamp(3rem,5vw,7rem) clamp(90px,7.5vw,180px) 1fr auto;}
-  body.display .overall .row:first-child .avatar{width:clamp(90px,7.5vw,180px);height:clamp(112px,9.4vw,225px);}
 }
 
 /* ---------- host page ---------- */

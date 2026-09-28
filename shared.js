@@ -100,21 +100,6 @@ function withCounts(contestants, categoryId, votes){
   return contestants.map(c => ({ ...c, votes: map[c.id] || 0 }));
 }
 
-// Best Overall: not a category. Total votes per contestant, summed across ALL categories.
-function buildOverall(state){
-  const totals = {};
-  state.votes.forEach(v => {
-    const key = v.entry_id ? 'e_' + v.entry_id : 't_' + v.team_id;
-    totals[key] = (totals[key] || 0) + 1;
-  });
-  const solo = state.entries.filter(e => !e.team_id).map(e => ({ id: 'e_'+e.id, label: e.name, sub: e.costume, votes: totals['e_'+e.id] || 0, photo: (state.photoMap||{})['e_'+e.id] || null }));
-  const teams = state.teams.map(t => {
-    const members = state.entries.filter(e => e.team_id === t.id);
-    return { id: 't_'+t.id, label: t.display_name, sub: members.map(m=>m.name).join(', '), votes: totals['t_'+t.id] || 0, photo: (state.photoMap||{})['t_'+t.id] || null };
-  });
-  return [...solo, ...teams];
-}
-
 // Spine colour for a contestant: stable per id, so the shelf looks the same on every screen.
 function spineTone(id){
   let h = 0; const s = String(id);

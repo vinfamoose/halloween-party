@@ -47,9 +47,7 @@ function panel(panelKey, title, icon, contestants, limit){
 async function loadResults(){
   let state;
   try{ state = await loadAll(); }catch(e){ return; }
-  const overallEl = document.getElementById('overall');
   const catsEl = document.getElementById('cats');
-  overallEl.innerHTML = panel('overall', 'Best Overall', 'i-trophy', buildOverall(state), wide.matches ? 5 : 8);
   catsEl.innerHTML = state.categories.length ? '' : '<div class="empty">No categories are set up yet.</div>';
   state.categories.forEach(cat => {
     const sec = document.createElement('section');

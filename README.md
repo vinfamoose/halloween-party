@@ -22,9 +22,6 @@
   2 people used.
 - **Best Group Costume** — any group name 3+ people used.
 - **Most Phoned In** — open to everyone, solo or grouped.
-- **Best Overall** — not voted on directly. It's a live leaderboard summing
-  each entry/team's votes across all 4 categories above, shown at the top
-  of the Results tab.
 
 ## Changing the categories later
 Edit the `insert into categories (...)` rows in the schema (or update the
