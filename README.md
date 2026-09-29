@@ -100,3 +100,28 @@ ruleset: in GitHub go to **Settings → Rules → Rulesets → New ruleset → I
 - requires **Database migrations** and **Front-end tests** to pass before merging,
 - blocks force-pushes and deleting `main`,
 - lets repository admins bypass it only when merging a pull request (an emergency override), not by pushing straight to `main`.
+
+## Deploy pipeline
+`.github/workflows/deploy.yml` runs on every push to `main` (so, every merged PR), one stage at a time:
+
+1. **CI**: the same two checks as a pull request (`ci.yml`).
+2. **Apply migrations to Supabase**: links the real project, prints which migrations production already
+   has and which this deploy will apply, then runs `supabase db push`.
+3. **Publish to GitHub Pages**: copies only the site files (`*.html`, `*.css`, `*.js`, `best-host.jpg`)
+   and deploys them.
+
+Each stage runs only if the previous one passed, and the database always goes first, so new pages never go
+live before the tables they need. Only one deploy runs at a time. You can also start one by hand from the
+Actions tab (**Deploy → Run workflow**).
+
+One-off setup:
+1. **Settings → Pages → Build and deployment → Source: GitHub Actions** (instead of "Deploy from a branch").
+2. **Settings → Secrets and variables → Actions → New repository secret**, twice:
+   - `SUPABASE_ACCESS_TOKEN`: create one at supabase.com → Account → Access Tokens.
+   - `SUPABASE_DB_PASSWORD`: your database password (Supabase → Project Settings → Database; reset it there if you don't have it).
+3. **Supabase → Project Settings → Integrations → GitHub**: turn off **Deploy to production**, so this
+   workflow is the only thing applying migrations.
+
+Until the secrets are set, the migrations stage fails with a message saying so, and the site isn't published
+by this workflow. On the first run, check the "Show which migrations production already has" step: every
+migration already applied should appear in the Remote column.
