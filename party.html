@@ -8,8 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=8">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="stylesheet" href="style.css?v=9">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -59,12 +58,6 @@
         <button type="submit" class="btn" id="registerBtn">Check In</button>
         <div class="msg" id="registerMsg" role="alert"></div>
       </form>
-
-      <div class="slip share">
-        <label>Share this to let others check in</label>
-        <div class="qr-box"><div id="qrcode"></div></div>
-        <div class="qr-link" id="qrLink"></div>
-      </div>
     </section>
 
     <section id="vote-panel" class="panel" hidden>
@@ -127,11 +120,6 @@ function showTab(name){
   window.scrollTo(0, 0);
 }
 tabBtns.forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
-
-try{
-  new QRCode(document.getElementById('qrcode'), { text: location.origin + location.pathname, width: 168, height: 168, colorDark: "#0c0a0a", colorLight: "#efe9dc" });
-}catch(e){}
-document.getElementById('qrLink').textContent = location.origin + location.pathname;
 
 // ---------- Check-in ----------
 document.getElementById('registerForm').addEventListener('submit', async (ev) => {
