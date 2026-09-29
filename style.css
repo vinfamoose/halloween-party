@@ -334,3 +334,24 @@ button.btn.danger.armed{background:var(--red-fill);color:var(--bone);border-colo
 .votelog li .why{display:block;font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
 .votelog-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;}
 .votelog-head .title{margin:0;}
+
+/* ---------- Best Host award (results pages, after the reveal) ---------- */
+.award{position:fixed;inset:0;z-index:45;display:flex;align-items:center;justify-content:center;padding:24px 16px;overflow:auto;
+  background:radial-gradient(ellipse at 50% 40%,rgba(245,210,15,.22),transparent 60%),var(--ink);animation:award-bg .8s ease both;}
+.award-card{display:flex;flex-direction:column;align-items:center;text-align:center;gap:clamp(12px,2.2vh,28px);max-width:92vw;}
+.award-kicker{font-family:var(--osd);font-size:clamp(1.4rem,2.6vw,2.8rem);line-height:1;color:var(--bone-dim);letter-spacing:.08em;animation:panel-in .6s .2s var(--ease) both;}
+.award-title{margin:0;display:flex;align-items:center;gap:.25em;font-family:var(--display);font-weight:400;text-transform:uppercase;line-height:.95;
+  font-size:clamp(2.6rem,8vw,8rem);white-space:nowrap;color:var(--yellow);animation:award-stamp .7s .45s var(--ease) both;}
+.award-title .icon{width:.8em;height:.8em;stroke-width:2;}
+.award-frame{width:clamp(200px,34vh,460px);aspect-ratio:3/4;background:var(--case);border:clamp(6px,.8vw,12px) solid var(--yellow);
+  box-shadow:0 0 0 2px #000,0 24px 80px rgba(245,210,15,.25);transform:rotate(-2deg);overflow:hidden;animation:award-frame .9s .8s var(--ease) both;}
+.award-frame img{width:100%;height:100%;object-fit:cover;display:block;}
+.award.no-photo .award-frame{display:none;}
+.award.no-photo .award-title .icon{width:1em;height:1em;}
+.award-name{font-family:var(--display);text-transform:uppercase;letter-spacing:.02em;line-height:1;font-size:clamp(2.4rem,7vw,6.5rem);color:var(--bone);
+  animation:panel-in .7s 1.3s var(--ease) both;}
+.award-x{top:16px;right:16px;}
+@keyframes award-bg{from{opacity:0;}to{opacity:1;}}
+@keyframes award-stamp{from{opacity:0;transform:scale(1.8) rotate(-6deg);}to{opacity:1;transform:none;}}
+@keyframes award-frame{from{opacity:0;transform:translateY(30px) rotate(-8deg) scale(.9);}to{opacity:1;transform:rotate(-2deg);}}
+@media (min-width:1000px){ body.display .award-x{display:none;} }

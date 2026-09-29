@@ -53,7 +53,8 @@ There is **no login**: the page uses the same public key as the guest pages, so 
 
 ### Admin tab
 The host page's **Admin** tab needs a sign-in; the Photos & guests tab stays open. To set it up once:
-1. Run the `20260929060000_device_reset`, `20260929070000_admin` and `20260929080000_admin_controls` migrations.
+1. Run the `20260929060000_device_reset`, `20260929070000_admin`, `20260929080000_admin_controls` and
+   `20260929090000_results_revealed_at` migrations.
 2. Supabase → **Authentication → Users → Add user** (email + password) for yourself, and turn off
    **Allow new users to sign up** (Authentication → Sign In / Providers).
 3. SQL Editor: `insert into public.admins (user_id) select id from auth.users where email = 'you@example.com';`
@@ -62,6 +63,10 @@ What's in it (every action is also checked in the database, so only accounts in 
 - **Voting open** switch: when off, guests see "Voting is closed" and the database rejects new or changed votes.
 - **Results visible** switch: when off, the results and big-screen pages show "Results will be revealed soon…".
   This only hides them on those pages; vote counts are still readable from the database with the public key.
+  **30 seconds after you switch it back on**, both results pages are taken over by a full-screen
+  **Best Host** award. Name and title are at the top of `results.js` (`BEST_HOST`); put the photo in the repo
+  root as `best-host.jpg` (portrait works best). Without the photo the award shows a crown instead. Guests can
+  close it on their phones; the big screen keeps it up. Switching results off again takes it down.
 - **Vote log**: every vote by category. Flags a guest who voted more than once in a category from different
   phones, votes cast in Dev Test Mode, and anyone who voted for themselves or their own group.
 - **Clear all votes**: deletes every vote but keeps guests and photos; phones forget their votes so everyone can vote again.

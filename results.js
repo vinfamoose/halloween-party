@@ -44,6 +44,51 @@ function panel(panelKey, title, icon, contestants, limit){
   return `<h2><svg class="icon" aria-hidden="true"><use href="#${icon}"/></svg>${escapeHtml(title)}</h2>${body}`;
 }
 
+// ---------- Best Host award ----------
+// 30 seconds after the admin reveals the results, a full-screen award takes over. Drop the photo in the repo
+// root as best-host.jpg; without it the award shows the crown instead.
+const BEST_HOST = { title: 'Best Host', name: 'Rachel Taylor', photo: 'best-host.jpg' };
+const AWARD_DELAY = 30000;
+let awardFor = null;   // results_revealed_at the award is scheduled/shown for
+let awardTimer = null;
+let sawHidden = false; // this page watched the results go from hidden to shown
+
+function awardEl(){
+  let el = document.getElementById('award');
+  if(el) return el;
+  el = document.createElement('div');
+  el.id = 'award'; el.className = 'award'; el.hidden = true;
+  el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
+  el.setAttribute('aria-label', `${BEST_HOST.title}: ${BEST_HOST.name}`);
+  el.innerHTML = `<button type="button" class="lb-x award-x" aria-label="Close">✕</button>
+    <div class="award-card">
+      <div class="award-kicker">SPECIAL AWARD</div>
+      <h2 class="award-title">${CROWN}${escapeHtml(BEST_HOST.title)}</h2>
+      <div class="award-frame"><img src="${escapeHtml(BEST_HOST.photo)}" alt="${escapeHtml(BEST_HOST.name)}"></div>
+      <div class="award-name">${escapeHtml(BEST_HOST.name)}</div>
+    </div>`;
+  el.querySelector('img').addEventListener('error', () => el.classList.add('no-photo'));
+  el.querySelector('.award-x').addEventListener('click', () => { el.hidden = true; });
+  document.body.appendChild(el);
+  return el;
+}
+function hideAward(){
+  clearTimeout(awardTimer); awardTimer = null; awardFor = null;
+  const el = document.getElementById('award'); if(el) el.hidden = true;
+}
+function syncAward(app){
+  if(!app.results_visible || !app.results_revealed_at){ sawHidden = sawHidden || !app.results_visible; hideAward(); return; }
+  if(awardFor === app.results_revealed_at) return; // already scheduled or shown for this reveal
+  awardFor = app.results_revealed_at;
+  // Watched the reveal live: count 30s from now. Otherwise (page opened or reloaded later) go by the reveal
+  // time, capped at 30s in case this device's clock is off.
+  const wait = sawHidden ? AWARD_DELAY
+    : Math.min(AWARD_DELAY, Math.max(0, Date.parse(app.results_revealed_at) + AWARD_DELAY - Date.now()));
+  awardEl(); // build now so the photo is loaded by the time it shows
+  clearTimeout(awardTimer);
+  awardTimer = setTimeout(() => { awardEl().hidden = false; }, wait);
+}
+
 async function loadResults(){
   let state, app;
   try{ [state, app] = await Promise.all([loadAll(), getAppState()]); }catch(e){
@@ -51,6 +96,7 @@ async function loadResults(){
     return;
   }
   const catsEl = document.getElementById('cats');
+  syncAward(app);
   // The admin can hide results until the reveal. (Only hidden here: vote counts are still public in the database.)
   if(!app.results_visible){
     catsEl.innerHTML = '<div class="empty reveal">Results will be revealed soon…</div>';
