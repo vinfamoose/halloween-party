@@ -53,6 +53,12 @@
       <h2 class="title spaced">Individuals</h2>
       <div class="shelf" id="soloList"></div>
     </section>
+
+    <section id="testing">
+      <h2 class="title spaced">Testing</h2>
+      <p class="hint">Makes every guest phone forget its check-in, votes and Dev Test Mode, as if the cookies were cleared. Open pages reset straight away; others reset next time they're opened. The guest list and votes stored online are not touched.</p>
+      <button type="button" class="btn danger" id="resetDevices">Reset all guest devices</button>
+    </section>
   </main>
 </div>
 
@@ -74,7 +80,7 @@
 <input type="file" id="libInput" accept="image/*" hidden>
 <div class="toast" id="toast" role="status" aria-live="polite" style="bottom:20px"></div>
 
-<script src="shared.js?v=5"></script>
+<script src="shared.js?v=6"></script>
 <script>
 const $ = id => document.getElementById(id);
 const ICON_CAM = '<svg class="icon" aria-hidden="true"><use href="#i-camera"/></svg>';
@@ -256,6 +262,25 @@ async function cleanupEmptyTeams(){
     sb.storage.from('photos').remove(['team-' + t.id + '.jpg']);
   }
 }
+
+// ---------- Reset all guest devices ----------
+// Same two-tap confirm as the delete buttons, but this button isn't re-rendered, so it resets itself.
+(function(){
+  const btn = $('resetDevices'), label = btn.textContent;
+  let timer;
+  const disarm = () => { clearTimeout(timer); btn.classList.remove('armed'); btn.textContent = label; };
+  btn.addEventListener('click', async () => {
+    if(!btn.classList.contains('armed')){
+      btn.classList.add('armed'); btn.textContent = 'Tap again to confirm';
+      timer = setTimeout(disarm, 4000);
+      return;
+    }
+    disarm(); btn.disabled = true; btn.textContent = 'Resetting…';
+    const { error } = await sb.rpc('reset_guest_devices');
+    toast(error ? 'Reset failed — has the device_reset migration been run?' : 'All guest devices reset.', !!error);
+    btn.disabled = false; btn.textContent = label;
+  });
+})();
 
 // ---------- Add a guest ----------
 function syncAddGroups(){

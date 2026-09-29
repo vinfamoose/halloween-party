@@ -96,7 +96,7 @@
   </div>
 </nav>
 
-<script src="shared.js?v=5"></script>
+<script src="shared.js?v=6"></script>
 <script>
 // ---------- VCR clock ----------
 (function(){
@@ -353,7 +353,17 @@ sb.channel('costume-contest-changes')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, () => { loadGroups(); refreshVisible(); })
   .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, refreshVisible)
   .on('postgres_changes', { event: '*', schema: 'public', table: 'contestant_photos' }, refreshVisible)
+  .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, p => handleDeviceReset(p.new.reset_generation))
   .subscribe();
+
+// ---------- Host reset ----------
+// When the host resets all guest devices, forget this phone's check-in and votes and start over.
+async function handleDeviceReset(generation){
+  if(!await applyDeviceReset(generation).catch(() => false)) return;
+  syncDevUi(); showRegistrationState(); showTab('register');
+  toast('This device has been reset.');
+}
+handleDeviceReset();
 
 showTab(location.hash === '#vote' || getRegistration() ? 'vote' : 'register');
 </script>

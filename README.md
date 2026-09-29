@@ -51,4 +51,6 @@ Photograph every guest and group, add people who didn't register, regroup them, 
 
 There is **no login**: the page uses the same public key as the guest pages, so only give its link to the host. Run the `20260929030000`, `20260929040000` and `20260929050000` migrations once (the last one grants the host page its write access). On the night, open `https://…/host.html` on your phone and tap a guest or group to take (or pick) their photo; "Needs photo" shows who is still missing. Photos are resized on the phone before upload, so the free tier is plenty.
 
+**Reset all guest devices** (bottom of the host page) makes every guest phone forget its check-in, votes and device id — handy after a test run, so testers don't have to clear their cookies. It needs the `20260929060000_device_reset` migration. Open guest pages reset instantly; closed ones reset the next time they're opened. It doesn't delete anything from the database: remove test guests with the Edit buttons (which also removes their votes).
+
 Because there's no login, anyone who finds the link (or reads the page source) could edit the guest list. That's fine for a private party; if it ever matters, put the login back.

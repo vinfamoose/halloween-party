@@ -34,6 +34,36 @@ function writeStore(key, value){
 }
 function readJson(key){ try{ return JSON.parse(readStore(key)); }catch(e){ return null; } }
 
+// ---------- Host "reset all guest devices" ----------
+// The host bumps app_state.reset_generation; each device remembers the last generation it saw and wipes
+// its check-in, votes and device id when the number changes. Stored outside readStore/writeStore so it
+// works the same in Dev Test Mode.
+const RESET_KEY = 'costume-contest-reset-gen';
+const DEVICE_KEYS = ['costume-contest-device-id', 'costume-contest-registration', 'costume-contest-votes', DEV_FLAG];
+function clearDeviceData(){
+  DEVICE_KEYS.forEach(k => {
+    document.cookie = `${k}=; max-age=0; path=/; SameSite=Lax`;
+    try{ localStorage.removeItem(k); }catch(e){}
+  });
+  Object.keys(memStore).forEach(k => delete memStore[k]);
+}
+// Resolves true if this device was wiped.
+async function applyDeviceReset(generation){
+  if(generation == null){
+    const { data } = await sb.from('app_state').select('reset_generation').eq('id', 1).maybeSingle();
+    if(!data) return false; // migration not run yet
+    generation = data.reset_generation;
+  }
+  const gen = String(generation);
+  let seen = readCookie(RESET_KEY);
+  if(seen === null){ try{ seen = localStorage.getItem(RESET_KEY); }catch(e){} }
+  const wiped = (seen ?? '0') !== gen;
+  if(wiped) clearDeviceData();
+  document.cookie = `${RESET_KEY}=${gen}; max-age=${COOKIE_MAX_AGE}; path=/; SameSite=Lax`;
+  try{ localStorage.setItem(RESET_KEY, gen); }catch(e){}
+  return wiped;
+}
+
 function getDeviceId(){
   if(isDevMode()) return "dev_" + crypto.randomUUID(); // fresh identity per action
   let id = readStore('costume-contest-device-id');
