@@ -56,7 +56,8 @@
   </main>
 </div>
 
-<input type="file" id="fileInput" accept="image/*" hidden>
+<input type="file" id="fileInput" accept="image/*" capture="environment" hidden>
+<input type="file" id="libInput" accept="image/*" hidden>
 <div class="toast" id="toast" role="status" aria-live="polite" style="bottom:20px"></div>
 
 <script src="shared.js?v=3"></script>
@@ -164,7 +165,7 @@ function editorFor(x){
     ed.innerHTML = `<label for="g-${x.key}">Group</label>
       <select id="g-${x.key}">${groupOptions(current)}</select>
       <input type="text" id="gn-${x.key}" placeholder="New group name" maxlength="60" hidden>
-      <div class="editor-actions"><button type="button" class="btn" data-act="save">Save group</button>
+      <div class="editor-actions"><button type="button" class="btn ghost" data-act="lib">Upload photo from library</button><button type="button" class="btn" data-act="save">Save group</button>
       <button type="button" class="btn danger" data-act="del">Delete person</button></div>`;
     const sel = ed.querySelector('select'), nu = ed.querySelector('input');
     sel.addEventListener('change', () => { nu.hidden = sel.value !== NEW; if(!nu.hidden) nu.focus(); });
@@ -187,7 +188,7 @@ function editorFor(x){
     }, `Deleted ${x.label}.`);
   }else{
     ed.innerHTML = `<p class="hint">Deleting a group breaks it up: its members stay as individuals, and the votes it received are removed.</p>
-      <div class="editor-actions"><button type="button" class="btn danger" data-act="del">Delete group</button></div>`;
+      <div class="editor-actions"><button type="button" class="btn ghost" data-act="lib">Upload photo from library</button><button type="button" class="btn danger" data-act="del">Delete group</button></div>`;
     armDelete(ed.querySelector('[data-act=del]'), 'Delete group', async () => {
       await sb.from('entries').update({ team_id: null }).eq('team_id', id);
       await sb.from('votes').delete().eq('team_id', id);
@@ -196,6 +197,7 @@ function editorFor(x){
       sb.storage.from('photos').remove(['team-' + id + '.jpg']);
     }, `Deleted ${x.label}.`);
   }
+  ed.querySelector('[data-act=lib]').addEventListener('click', () => { target = { key: x.key, label: x.label }; $('libInput').value = ''; $('libInput').click(); });
   return ed;
 }
 
@@ -282,8 +284,8 @@ async function toJpeg(file, maxSide = 1200){
   return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('encode')), 'image/jpeg', 0.82));
 }
 
-$('fileInput').addEventListener('change', async () => {
-  const file = $('fileInput').files[0];
+['fileInput','libInput'].forEach(id => $(id).addEventListener('change', () => handlePhoto($(id).files[0])));
+async function handlePhoto(file){
   if(!file || !target) return;
   const { key, label } = target;
   const isTeam = key.startsWith('t_');
@@ -304,7 +306,7 @@ $('fileInput').addEventListener('change', async () => {
   }
   busy.delete(key);
   await loadStudio();
-});
+}
 </script>
 </body>
 </html>
