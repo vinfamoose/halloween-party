@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=6">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="host">
@@ -27,6 +27,10 @@
   </header>
 
   <main>
+    <div class="dividers" role="tablist" aria-label="Host sections">
+      <button type="button" class="divider" role="tab" id="tStudio" aria-selected="true" aria-controls="studio"><span>Photos &amp; guests</span></button>
+      <button type="button" class="divider" role="tab" id="tAdmin" aria-selected="false" aria-controls="admin"><span>Admin</span></button>
+    </div>
     <section id="studio">
       <div class="ballot"><span>PHOTOGRAPHED</span><span id="progress"></span></div>
       <button type="button" class="btn ghost" id="addToggle" aria-expanded="false">Add a guest</button>
@@ -54,10 +58,26 @@
       <div class="shelf" id="soloList"></div>
     </section>
 
-    <section id="testing">
-      <h2 class="title spaced">Testing</h2>
-      <p class="hint">Makes every guest phone forget its check-in, votes and Dev Test Mode, as if the cookies were cleared. Open pages reset straight away; others reset next time they're opened. The guest list and votes stored online are not touched.</p>
-      <button type="button" class="btn danger" id="resetDevices">Reset all guest devices</button>
+    <section id="admin" hidden>
+      <form class="slip" id="loginForm" novalidate hidden>
+        <h2 class="title">Admin sign in</h2>
+        <label for="email">Email</label>
+        <input type="email" id="email" autocomplete="username">
+        <label for="password">Password</label>
+        <input type="password" id="password" autocomplete="current-password">
+        <button type="submit" class="btn" id="loginBtn">Sign in</button>
+        <div class="msg" id="loginMsg" role="alert"></div>
+      </form>
+      <div id="adminBody" hidden>
+        <div class="ballot"><span>ADMIN</span><span id="adminWho"></span></div>
+        <p class="hint" id="notAdmin" hidden>This account isn't an admin. Add it to the <code>admins</code> table in Supabase.</p>
+        <div id="adminTools" hidden>
+          <h2 class="title">Testing</h2>
+          <p class="hint">Makes every guest phone forget its check-in, votes and Dev Test Mode, as if the cookies were cleared. Open pages reset straight away; others reset next time they're opened. The guest list and votes stored online are not touched.</p>
+          <button type="button" class="btn danger" id="resetDevices">Reset all guest devices</button>
+        </div>
+        <button type="button" class="linkbtn" id="signOut">Sign out</button>
+      </div>
     </section>
   </main>
 </div>
@@ -263,6 +283,38 @@ async function cleanupEmptyTeams(){
   }
 }
 
+// ---------- Sections ----------
+function showSection(admin){
+  $('tStudio').setAttribute('aria-selected', !admin);
+  $('tAdmin').setAttribute('aria-selected', admin);
+  $('studio').hidden = admin; $('admin').hidden = !admin;
+}
+$('tStudio').addEventListener('click', () => showSection(false));
+$('tAdmin').addEventListener('click', () => showSection(true));
+
+// ---------- Admin (login gated) ----------
+// Signing in is only needed here. Admin actions are also checked in the database (is_admin()), so
+// someone who unhides these buttons still can't use them.
+async function showAuthState(session){
+  $('loginForm').hidden = !!session;
+  $('adminBody').hidden = !session;
+  if(!session) return;
+  $('adminWho').textContent = session.user.email || '';
+  const { data: ok } = await sb.rpc('is_admin');
+  $('adminTools').hidden = !ok; $('notAdmin').hidden = !!ok;
+}
+$('loginForm').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const btn = $('loginBtn'); btn.disabled = true; btn.textContent = 'Signing in...'; $('loginMsg').textContent = '';
+  const { error } = await sb.auth.signInWithPassword({ email: $('email').value.trim(), password: $('password').value });
+  btn.disabled = false; btn.textContent = 'Sign in';
+  if(error) $('loginMsg').textContent = 'Email or password is wrong.';
+  else $('password').value = '';
+});
+$('signOut').addEventListener('click', () => sb.auth.signOut());
+sb.auth.onAuthStateChange((_evt, session) => { setTimeout(() => showAuthState(session)); }); // defer: no Supabase calls inside the callback
+sb.auth.getSession().then(({ data }) => showAuthState(data.session));
+
 // ---------- Reset all guest devices ----------
 // Same two-tap confirm as the delete buttons, but this button isn't re-rendered, so it resets itself.
 (function(){
@@ -277,7 +329,7 @@ async function cleanupEmptyTeams(){
     }
     disarm(); btn.disabled = true; btn.textContent = 'Resetting…';
     const { error } = await sb.rpc('reset_guest_devices');
-    toast(error ? 'Reset failed — has the device_reset migration been run?' : 'All guest devices reset.', !!error);
+    toast(error ? 'Reset failed — are you signed in as an admin?' : 'All guest devices reset.', !!error);
     btn.disabled = false; btn.textContent = label;
   });
 })();

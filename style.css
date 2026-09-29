@@ -79,12 +79,12 @@ h2.title{font-family:var(--display);font-weight:400;font-size:1.9rem;line-height
 .slip{background:var(--shelf);border:1px solid var(--line);border-radius:4px;padding:20px;margin-bottom:20px;}
 label{display:block;font-size:.95rem;font-weight:600;color:var(--bone);margin-bottom:6px;letter-spacing:.02em;}
 .hint{font-size:.9rem;color:var(--bone-dim);margin:-8px 0 18px;max-width:60ch;}
-input[type=text],input[type=password],select{
+input[type=text],input[type=password],input[type=email],select{
   width:100%;min-height:52px;background:var(--ink);border:1px solid var(--line);border-bottom:3px solid var(--bone-dim);border-radius:0;
   padding:12px 14px;color:var(--bone);font-family:var(--body);font-size:1.1rem;margin-bottom:18px;transition:border-color .15s;
 }
-input[type=text]::placeholder,input[type=password]::placeholder{color:#8a8277;}
-input[type=text]:focus,input[type=password]:focus,select:focus{outline:none;border-color:var(--yellow);border-bottom-color:var(--yellow);box-shadow:0 0 0 3px rgba(245,210,15,.28);}
+input[type=text]::placeholder,input[type=password]::placeholder,input[type=email]::placeholder{color:#8a8277;}
+input[type=text]:focus,input[type=password]:focus,input[type=email]:focus,select:focus{outline:none;border-color:var(--yellow);border-bottom-color:var(--yellow);box-shadow:0 0 0 3px rgba(245,210,15,.28);}
 select{appearance:none;-webkit-appearance:none;padding-right:44px;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='10' viewBox='0 0 16 10'%3E%3Cpath d='M1 1l7 7 7-7' fill='none' stroke='%23f5d20f' stroke-width='2.5'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 16px center;}
