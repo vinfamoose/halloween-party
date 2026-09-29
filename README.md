@@ -78,3 +78,11 @@ What's in it (every action is also checked in the database, so only accounts in 
   Categories and the two switches are left as they are.
 
 Because there's no login, anyone who finds the link (or reads the page source) could edit the guest list. That's fine for a private party; if it ever matters, put the login back.
+
+## Migration checks (GitHub Actions)
+Every pull request that touches `supabase/` runs the **Migrations** workflow (`.github/workflows/migrations.yml`):
+it starts a throwaway Supabase database, creates the original tables from `supabase/ci/baseline.sql`,
+applies every migration in order, then runs `supabase/ci/smoke_test.sql` to check that guests can check in
+and vote, that only admins can use the admin controls, and that closed voting really is closed. Each run's
+summary page lists every migration and whether it applied. Nothing in it touches the real project; the
+Supabase GitHub integration still applies migrations to production when they're merged into `main`.
