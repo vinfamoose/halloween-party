@@ -8,8 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=5">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="stylesheet" href="style.css?v=10">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -59,16 +58,11 @@
         <button type="submit" class="btn" id="registerBtn">Check In</button>
         <div class="msg" id="registerMsg" role="alert"></div>
       </form>
-
-      <div class="slip share">
-        <label>Share this to let others check in</label>
-        <div class="qr-box"><div id="qrcode"></div></div>
-        <div class="qr-link" id="qrLink"></div>
-      </div>
     </section>
 
     <section id="vote-panel" class="panel" hidden>
       <div class="ballot"><span>YOUR BALLOT</span><span id="ballotCount"></span></div>
+      <div class="notice" id="votingClosed" role="status" hidden>Voting is closed</div>
       <div class="dividers" id="categoryTabs" role="tablist" aria-label="Categories"></div>
       <div class="shelf" id="voteList"></div>
     </section>
@@ -96,7 +90,7 @@
   </div>
 </nav>
 
-<script src="shared.js?v=5"></script>
+<script src="shared.js?v=7"></script>
 <script>
 // ---------- VCR clock ----------
 (function(){
@@ -126,11 +120,6 @@ function showTab(name){
   window.scrollTo(0, 0);
 }
 tabBtns.forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
-
-try{
-  new QRCode(document.getElementById('qrcode'), { text: location.origin + location.pathname, width: 168, height: 168, colorDark: "#0c0a0a", colorLight: "#efe9dc" });
-}catch(e){}
-document.getElementById('qrLink').textContent = location.origin + location.pathname;
 
 // ---------- Check-in ----------
 document.getElementById('registerForm').addEventListener('submit', async (ev) => {
@@ -229,6 +218,7 @@ syncDevUi();
 
 // ---------- Vote panel ----------
 let currentState = null;
+let votingOpen = true; // set by the admin; see handleAppState
 let currentCategoryId = null;
 const CHECK = '<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>';
 
@@ -265,6 +255,7 @@ async function getMyVote(categoryId){
 }
 
 async function castVote(c, category){
+  if(!votingOpen){ toast('Voting is closed.', true); return false; }
   if(isOwnContestant(c) && !isDevMode()){ toast("You can't vote for yourself!", true); return false; }
   const reg = getRegistration();
   if(!reg){ toast('Check in first so we know who is voting.', true); return false; }
@@ -279,7 +270,7 @@ async function castVote(c, category){
     renderVoteList(category);
     return true;
   }catch(e){
-    toast('Vote failed — try again.', true);
+    toast(votingOpen ? 'Vote failed — try again.' : 'Voting is closed.', true);
     return false;
   }
 }
@@ -299,7 +290,7 @@ async function renderVoteList(category){
     const voted = myVote === c.id;
     const row = document.createElement('div');
     row.className = `tape votable t${spineTone(c.id)}` + (voted ? ' voted' : '') + (own ? ' own' : '') + (c.photo ? ' hasphoto' : '');
-    const stateHtml = voted ? `<span class="stamp">${CHECK}Voted</span>` : own ? 'You' : 'Vote';
+    const stateHtml = voted ? `<span class="stamp">${CHECK}Voted</span>` : own ? 'You' : votingOpen ? 'Vote' : 'Closed';
     const info = document.createElement('button');
     info.type = 'button'; info.className = 'tape-info';
     info.setAttribute('aria-label', c.photo ? `See ${c.label}'s photo` : `Vote for ${c.label}`);
@@ -309,6 +300,7 @@ async function renderVoteList(category){
     vote.setAttribute('aria-pressed', voted ? 'true' : 'false');
     vote.setAttribute('aria-label', `Vote for ${c.label}`);
     vote.innerHTML = stateHtml;
+    vote.disabled = !votingOpen && !voted;
     const doVote = async () => { if(voted && !isDevMode()) return; await castVote(c, category); };
     vote.addEventListener('click', doVote);
     // With a photo, the name/photo opens the big view; without one there's nothing to show, so it votes.
@@ -331,8 +323,8 @@ function openLightbox(c, category, { own, voted }){
   document.getElementById('lbName').textContent = c.label;
   document.getElementById('lbSub').textContent = c.sub;
   const btn = document.getElementById('lbVote');
-  btn.textContent = voted ? 'Voted' : own ? 'This is you' : `Vote in ${category.name}`;
-  btn.disabled = (voted && !isDevMode()) || (own && !isDevMode());
+  btn.textContent = voted ? 'Voted' : own ? 'This is you' : !votingOpen ? 'Voting is closed' : `Vote in ${category.name}`;
+  btn.disabled = (voted && !isDevMode()) || (own && !isDevMode()) || !votingOpen;
   btn.onclick = async () => { if(await castVote(c, category)) closeLightbox(); };
   document.getElementById('lightbox').hidden = false;
   document.getElementById('lbClose').focus();
@@ -353,7 +345,28 @@ sb.channel('costume-contest-changes')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, () => { loadGroups(); refreshVisible(); })
   .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, refreshVisible)
   .on('postgres_changes', { event: '*', schema: 'public', table: 'contestant_photos' }, refreshVisible)
+  .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, p => handleAppState(p.new))
   .subscribe();
+
+// ---------- Admin controls ----------
+// Voting open/closed, plus the admin's "reset all guest devices" / "clear all votes" reaching this phone.
+async function handleAppState(app){
+  let cleared = null;
+  try{
+    app = { ...APP_DEFAULTS, ...(app || await getAppState()) };
+    cleared = await applyDeviceReset(app);
+  }catch(e){ return; }
+  votingOpen = app.voting_open;
+  document.getElementById('votingClosed').hidden = votingOpen;
+  if(cleared === 'device'){
+    syncDevUi(); showRegistrationState(); showTab('register');
+    toast('This device has been reset.');
+    return;
+  }
+  if(cleared === 'votes') toast('All votes were cleared — you can vote again.');
+  if(activeTab === 'vote') loadCategoriesAndVotePanel();
+}
+handleAppState();
 
 showTab(location.hash === '#vote' || getRegistration() ? 'vote' : 'register');
 </script>

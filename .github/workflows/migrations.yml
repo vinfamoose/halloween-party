@@ -1,0 +1,52 @@
+# Checks the database migrations on every pull request that touches supabase/, before they reach the
+# real project (the Supabase GitHub integration applies them to production when merged into main).
+#
+# It starts a throwaway Supabase database, creates the original tables from supabase/ci/baseline.sql,
+# applies every file in supabase/migrations/ in order, then runs supabase/ci/smoke_test.sql to check
+# the access rules. Nothing here connects to the real project.
+name: Migrations
+
+on:
+  pull_request:
+    paths: ['supabase/**', '.github/workflows/migrations.yml']
+  push:
+    branches: [main]
+    paths: ['supabase/**', '.github/workflows/migrations.yml']
+  workflow_dispatch:
+
+jobs:
+  migrations:
+    name: Apply migrations to a fresh database
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Put the CI baseline ahead of the migrations
+        # Only in this runner's copy of the repo; the baseline is never committed into migrations/.
+        run: cp supabase/ci/baseline.sql supabase/migrations/00000000000000_ci_baseline.sql
+
+      - name: Start the database and apply every migration
+        run: supabase db start
+
+      - name: Smoke-test the access rules
+        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -f supabase/ci/smoke_test.sql
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Migrations"
+            echo "| Migration | Result |"
+            echo "|---|---|"
+            for f in supabase/migrations/*.sql; do
+              v=$(basename "$f" | cut -d_ -f1)
+              ok=$(psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -tAc \
+                "select 1 from supabase_migrations.schema_migrations where version = '$v'" 2>/dev/null)
+              echo "| \`$(basename "$f")\` | $([ "$ok" = 1 ] && echo '✅ applied' || echo '❌ not applied') |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"

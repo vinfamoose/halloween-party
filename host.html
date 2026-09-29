@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=10">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="host">
@@ -27,6 +27,10 @@
   </header>
 
   <main>
+    <div class="dividers" role="tablist" aria-label="Host sections">
+      <button type="button" class="divider" role="tab" id="tStudio" aria-selected="true" aria-controls="studio"><span>Photos &amp; guests</span></button>
+      <button type="button" class="divider" role="tab" id="tAdmin" aria-selected="false" aria-controls="admin"><span>Admin</span></button>
+    </div>
     <section id="studio">
       <div class="ballot"><span>PHOTOGRAPHED</span><span id="progress"></span></div>
       <button type="button" class="btn ghost" id="addToggle" aria-expanded="false">Add a guest</button>
@@ -53,6 +57,55 @@
       <h2 class="title spaced">Individuals</h2>
       <div class="shelf" id="soloList"></div>
     </section>
+
+    <section id="admin" hidden>
+      <form class="slip" id="loginForm" novalidate hidden>
+        <h2 class="title">Admin sign in</h2>
+        <label for="email">Email</label>
+        <input type="email" id="email" autocomplete="username">
+        <label for="password">Password</label>
+        <input type="password" id="password" autocomplete="current-password">
+        <button type="submit" class="btn" id="loginBtn">Sign in</button>
+        <div class="msg" id="loginMsg" role="alert"></div>
+      </form>
+      <div id="adminBody" hidden>
+        <div class="ballot"><span>ADMIN</span><span id="adminWho"></span></div>
+        <p class="hint" id="notAdmin" hidden>This account isn't an admin. Add it to the <code>admins</code> table in Supabase.</p>
+        <div id="adminTools" hidden>
+          <div class="admin-block">
+            <h2 class="title">Party controls</h2>
+            <div class="admin-switches">
+              <button type="button" class="devtoggle" role="switch" id="swVoting" aria-checked="false">Voting open<span class="knob" aria-hidden="true"></span></button>
+              <button type="button" class="devtoggle" role="switch" id="swResults" aria-checked="false">Results visible<span class="knob" aria-hidden="true"></span></button>
+            </div>
+            <p class="hint">Closed voting is enforced by the database. Hidden results are only hidden on the results and big-screen pages; the counts are still public in the database.</p>
+          </div>
+
+          <div class="admin-block">
+            <div class="votelog-head"><h2 class="title">Vote log</h2><button type="button" class="linkbtn" id="logRefresh">Refresh</button></div>
+            <div class="ballot"><span id="logCount"></span><span id="logFlags"></span></div>
+            <div class="votelog" id="voteLog"></div>
+          </div>
+
+          <div class="admin-block danger-zone">
+            <h2 class="title">Reset</h2>
+            <div>
+              <p class="hint">Deletes every vote but keeps guests and photos. Phones forget their votes, so everyone can vote again.</p>
+              <button type="button" class="btn danger" id="clearVotes">Clear all votes</button>
+            </div>
+            <div>
+              <p class="hint">Makes every guest phone forget its check-in, votes and Dev Test Mode, as if the cookies were cleared. Open pages reset straight away; others next time they're opened. Nothing online is deleted.</p>
+              <button type="button" class="btn danger" id="resetDevices">Reset all guest devices</button>
+            </div>
+            <div>
+              <p class="hint">After a test run: deletes every guest, group, vote and photo, and resets every guest device. Categories and the switches above stay as they are.</p>
+              <button type="button" class="btn danger" id="startFresh">Start fresh</button>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="linkbtn" id="signOut">Sign out</button>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -74,7 +127,7 @@
 <input type="file" id="libInput" accept="image/*" hidden>
 <div class="toast" id="toast" role="status" aria-live="polite" style="bottom:20px"></div>
 
-<script src="shared.js?v=5"></script>
+<script src="shared.js?v=7"></script>
 <script>
 const $ = id => document.getElementById(id);
 const ICON_CAM = '<svg class="icon" aria-hidden="true"><use href="#i-camera"/></svg>';
@@ -256,6 +309,125 @@ async function cleanupEmptyTeams(){
     sb.storage.from('photos').remove(['team-' + t.id + '.jpg']);
   }
 }
+
+// ---------- Sections ----------
+function showSection(admin){
+  $('tStudio').setAttribute('aria-selected', !admin);
+  $('tAdmin').setAttribute('aria-selected', admin);
+  $('studio').hidden = admin; $('admin').hidden = !admin;
+}
+$('tStudio').addEventListener('click', () => showSection(false));
+$('tAdmin').addEventListener('click', () => { showSection(true); refreshAdmin(); });
+
+// ---------- Admin (login gated) ----------
+// Signing in is only needed here. Admin actions are also checked in the database (is_admin()), so
+// someone who unhides these buttons still can't use them.
+async function showAuthState(session){
+  $('loginForm').hidden = !!session;
+  $('adminBody').hidden = !session;
+  if(!session){ isAdmin = false; return; }
+  $('adminWho').textContent = session.user.email || '';
+  const { data: ok } = await sb.rpc('is_admin');
+  isAdmin = !!ok;
+  $('adminTools').hidden = !ok; $('notAdmin').hidden = !!ok;
+  refreshAdmin();
+}
+$('loginForm').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const btn = $('loginBtn'); btn.disabled = true; btn.textContent = 'Signing in...'; $('loginMsg').textContent = '';
+  const { error } = await sb.auth.signInWithPassword({ email: $('email').value.trim(), password: $('password').value });
+  btn.disabled = false; btn.textContent = 'Sign in';
+  if(error) $('loginMsg').textContent = 'Email or password is wrong.';
+  else $('password').value = '';
+});
+$('signOut').addEventListener('click', () => sb.auth.signOut());
+sb.auth.onAuthStateChange((_evt, session) => { setTimeout(() => showAuthState(session)); }); // defer: no Supabase calls inside the callback
+sb.auth.getSession().then(({ data }) => showAuthState(data.session));
+
+// ---------- Admin tools ----------
+let isAdmin = false;
+async function refreshAdmin(){
+  if(!isAdmin) return;
+  const app = await getAppState();
+  [['swVoting', app.voting_open], ['swResults', app.results_visible]].forEach(([id, on]) => {
+    $(id).setAttribute('aria-checked', on); $(id).classList.toggle('on', on);
+  });
+  await loadVoteLog();
+}
+
+// Party switches
+[['swVoting', 'p_voting_open', 'Voting'], ['swResults', 'p_results_visible', 'Results']].forEach(([id, param, what]) => {
+  $(id).addEventListener('click', async () => {
+    const on = $(id).getAttribute('aria-checked') !== 'true';
+    $(id).disabled = true;
+    const { error } = await sb.rpc('admin_set_flags', { [param]: on });
+    $(id).disabled = false;
+    if(error){ toast('That failed — are you signed in as an admin?', true); return; }
+    toast(what === 'Voting' ? (on ? 'Voting is open.' : 'Voting is closed.') : (on ? 'Results are showing.' : 'Results are hidden.'));
+    refreshAdmin();
+  });
+});
+
+// Vote log: every vote by category, flagging what looks off.
+async function loadVoteLog(){
+  const [all, { data: votes, error }] = await Promise.all([
+    loadAll(), sb.from('votes').select('device_id,category_id,entry_id,team_id,voter_entry_id,created_at').order('created_at')
+  ]);
+  if(error){ $('voteLog').innerHTML = '<div class="empty">Could not load votes.</div>'; return; }
+  const entry = Object.fromEntries(all.entries.map(e => [e.id, e]));
+  const team = Object.fromEntries(all.teams.map(t => [t.id, t]));
+  let flagged = 0;
+  const html = all.categories.map(cat => {
+    const rows = votes.filter(v => v.category_id === cat.id);
+    if(!rows.length) return '';
+    const perVoter = {};
+    rows.forEach(v => { if(v.voter_entry_id) perVoter[v.voter_entry_id] = (perVoter[v.voter_entry_id] || 0) + 1; });
+    const items = rows.map(v => {
+      const voter = entry[v.voter_entry_id];
+      const target = v.entry_id ? (entry[v.entry_id] || {}).name : (team[v.team_id] || {}).display_name;
+      const why = [];
+      if(v.device_id.startsWith('dev_')) why.push('Dev Test Mode');
+      if(v.voter_entry_id && perVoter[v.voter_entry_id] > 1) why.push(`Voted ${perVoter[v.voter_entry_id]}× here, from different phones`);
+      if(voter && (v.entry_id === voter.id || (v.team_id && v.team_id === voter.team_id))) why.push('Voted for themselves');
+      if(why.length) flagged++;
+      return `<li${why.length ? ' class="flag"' : ''}><span>${escapeHtml(voter ? voter.name : 'Unknown voter')}${why.length ? `<span class="why">${escapeHtml(why.join(' · '))}</span>` : ''}</span><span class="to">${escapeHtml(target || '—')}</span></li>`;
+    }).join('');
+    return `<section><h3>${escapeHtml(cat.name)}</h3><ol>${items}</ol></section>`;
+  }).join('');
+  $('logCount').innerHTML = `<b>${votes.length}</b> VOTES`;
+  $('logFlags').innerHTML = flagged ? `<b>${flagged}</b> FLAGGED` : '';
+  $('voteLog').innerHTML = html || '<div class="empty">No votes yet.</div>';
+}
+$('logRefresh').addEventListener('click', loadVoteLog);
+
+// Destructive buttons: same two-tap confirm as the delete buttons, but these aren't re-rendered, so they reset themselves.
+function confirmButton(btn, busyText, action, doneMsg){
+  const label = btn.textContent;
+  let timer;
+  const disarm = () => { clearTimeout(timer); btn.classList.remove('armed'); btn.textContent = label; };
+  btn.addEventListener('click', async () => {
+    if(!btn.classList.contains('armed')){
+      btn.classList.add('armed'); btn.textContent = 'Tap again to confirm';
+      timer = setTimeout(disarm, 4000);
+      return;
+    }
+    disarm(); btn.disabled = true; btn.textContent = busyText;
+    try{ await action(); toast(doneMsg); }
+    catch(e){ toast('That failed — are you signed in as an admin?', true); }
+    btn.disabled = false; btn.textContent = label;
+    await Promise.all([loadStudio(), refreshAdmin()]);
+  });
+}
+const rpcOrThrow = async name => { const { error } = await sb.rpc(name); if(error) throw error; };
+
+confirmButton($('clearVotes'), 'Clearing…', () => rpcOrThrow('admin_clear_votes'), 'All votes cleared.');
+confirmButton($('resetDevices'), 'Resetting…', () => rpcOrThrow('reset_guest_devices'), 'All guest devices reset.');
+confirmButton($('startFresh'), 'Wiping…', async () => {
+  await rpcOrThrow('admin_start_fresh');
+  // The database can't delete Storage files, so remove the photo files here once the wipe has gone through.
+  const { data: files } = await sb.storage.from('photos').list('', { limit: 1000 });
+  if(files && files.length) await sb.storage.from('photos').remove(files.map(f => f.name));
+}, 'Everything wiped. Ready for a fresh start.');
 
 // ---------- Add a guest ----------
 function syncAddGroups(){

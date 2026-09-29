@@ -44,13 +44,96 @@ function panel(panelKey, title, icon, contestants, limit){
   return `<h2><svg class="icon" aria-hidden="true"><use href="#${icon}"/></svg>${escapeHtml(title)}</h2>${body}`;
 }
 
+// ---------- Best Host award ----------
+// 30 seconds after the admin reveals the results, a full-screen award takes over. Drop the photo in the repo
+// root as best-host.jpg; without it the award shows the crown instead.
+const BEST_HOST = { title: 'Best Host', name: 'Rachel Taylor', photo: 'best-host.jpg' };
+const AWARD_DELAY = 30000;
+let awardFor = null;   // results_revealed_at the award is scheduled/shown for
+let awardTimer = null;
+let sawHidden = false; // this page watched the results go from hidden to shown
+
+function awardEl(){
+  let el = document.getElementById('award');
+  if(el) return el;
+  el = document.createElement('div');
+  el.id = 'award'; el.className = 'award'; el.hidden = true;
+  el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
+  el.setAttribute('aria-label', `${BEST_HOST.title}: ${BEST_HOST.name}`);
+  el.innerHTML = `<button type="button" class="lb-x award-x" aria-label="Close">✕</button>
+    <div class="award-card">
+      <div class="award-kicker">SPECIAL AWARD</div>
+      <h2 class="award-title">${CROWN}${escapeHtml(BEST_HOST.title)}</h2>
+      <div class="award-frame"><img src="${escapeHtml(BEST_HOST.photo)}" alt="${escapeHtml(BEST_HOST.name)}"></div>
+      <div class="award-name">${escapeHtml(BEST_HOST.name)}</div>
+    </div>`;
+  el.querySelector('img').addEventListener('error', () => el.classList.add('no-photo'));
+  el.querySelector('.award-x').addEventListener('click', () => { el.hidden = true; });
+  document.body.appendChild(el);
+  return el;
+}
+function hideAward(){
+  clearTimeout(awardTimer); awardTimer = null; awardFor = null;
+  const el = document.getElementById('award'); if(el) el.hidden = true;
+}
+function syncAward(app){
+  if(!app.results_visible || !app.results_revealed_at){ sawHidden = sawHidden || !app.results_visible; hideAward(); return; }
+  if(awardFor === app.results_revealed_at) return; // already scheduled or shown for this reveal
+  awardFor = app.results_revealed_at;
+  // Watched the reveal live: count 30s from now. Otherwise (page opened or reloaded later) go by the reveal
+  // time, capped at 30s in case this device's clock is off.
+  const wait = sawHidden ? AWARD_DELAY
+    : Math.min(AWARD_DELAY, Math.max(0, Date.parse(app.results_revealed_at) + AWARD_DELAY - Date.now()));
+  awardEl(); // build now so the photo is loaded by the time it shows
+  clearTimeout(awardTimer);
+  awardTimer = setTimeout(() => { awardEl().hidden = false; }, wait);
+}
+
+// ---------- Big screen before the reveal ----------
+// While results are hidden, the projector shows how to join in plus counts that don't give the standings away.
+const isDisplay = document.body.classList.contains('display');
+function intermission(catsEl, state, app){
+  let el = catsEl.querySelector('.intermission');
+  if(!el){
+    const url = new URL('party.html', location.href).href;
+    catsEl.innerHTML = `<section class="intermission">
+      <div class="join">
+        <div class="qr" id="joinQr" role="img" aria-label="QR code for ${escapeHtml(url)}"></div>
+        <div class="join-text"><b>Scan to check in &amp; vote</b><span>${escapeHtml(url.replace(/^https?:\/\//, ''))}</span></div>
+      </div>
+      <div class="tally">
+        <div><span class="n" id="tGuests">0</span><span class="l">Checked in</span></div>
+        <div><span class="n" id="tVotes">0</span><span class="l">Votes cast</span></div>
+        <div class="status" id="tStatus"></div>
+      </div>
+    </section>`;
+    el = catsEl.querySelector('.intermission');
+    try{ new QRCode(document.getElementById('joinQr'), { text: url, width: 512, height: 512, colorDark: '#0c0a0a', colorLight: '#efe9dc', correctLevel: QRCode.CorrectLevel.M }); }
+    catch(e){ document.getElementById('joinQr').hidden = true; } // library blocked: the link text still shows
+  }
+  document.getElementById('tGuests').textContent = state.entries.length;
+  document.getElementById('tVotes').textContent = state.votes.length;
+  document.getElementById('tStatus').textContent = app.voting_open ? 'Voting is open' : 'Voting closed — results coming up';
+  document.getElementById('tStatus').classList.toggle('closed', !app.voting_open);
+}
+
 async function loadResults(){
-  let state;
-  try{ state = await loadAll(); }catch(e){
+  let state, app;
+  try{ [state, app] = await Promise.all([loadAll(), getAppState()]); }catch(e){
     if(!document.querySelector('.reel')) document.getElementById('cats').innerHTML = '<div class="empty">Could not load results. Retrying…</div>';
     return;
   }
   const catsEl = document.getElementById('cats');
+  syncAward(app);
+  // The admin can hide results until the reveal. (Only hidden here: vote counts are still public in the database.)
+  document.querySelector('.sign h1 span').textContent = app.results_visible ? 'Results' : 'Contest';
+  document.querySelector('.sign .aside p').textContent = app.results_visible ? 'Votes update as they come in' : 'Results revealed at the end of the night';
+  if(!app.results_visible){
+    if(isDisplay) intermission(catsEl, state, app);
+    else catsEl.innerHTML = '<div class="empty reveal">Results will be revealed soon…</div>';
+    [prevWidth, prevVotes].forEach(m => Object.keys(m).forEach(k => delete m[k])); // bars grow from zero at the reveal
+    return;
+  }
   catsEl.innerHTML = state.categories.length ? '' : '<div class="empty">No categories are set up yet.</div>';
   state.categories.forEach(cat => {
     const sec = document.createElement('section');
@@ -77,4 +160,5 @@ sb.channel('costume-contest-results')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, scheduleLoad)
   .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, scheduleLoad)
   .on('postgres_changes', { event: '*', schema: 'public', table: 'contestant_photos' }, scheduleLoad)
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'app_state' }, scheduleLoad)
   .subscribe();

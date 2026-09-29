@@ -40,8 +40,9 @@ no code changes needed unless you introduce a new `kind` beyond
 ## Pages
 - `party.html` — guests on phones: Check In and Vote.
 - `results.html` — live leaderboard, phone-sized on every screen (the Results tab links here).
-- `display.html` — the big projector version of the leaderboard. Open it on the TV/laptop
-  (`https://…/display.html`).
+- `display.html` — the big projector screen. Open it on the TV/laptop (`https://…/display.html`).
+  While results are hidden it shows a QR code to check in & vote, how many have checked in and voted, and
+  whether voting is open; at the reveal it becomes the leaderboard.
 - `host.html` — host page: photos, add/regroup/delete guests (no login; keep the link private).
 - `style.css` / `shared.js` — shared styles and Supabase/data logic. Both pages
   are plain static files, so GitHub Pages (free) hosts them as-is.
@@ -51,4 +52,37 @@ Photograph every guest and group, add people who didn't register, regroup them, 
 
 There is **no login**: the page uses the same public key as the guest pages, so only give its link to the host. Run the `20260929030000`, `20260929040000` and `20260929050000` migrations once (the last one grants the host page its write access). On the night, open `https://…/host.html` on your phone and tap a guest or group to take (or pick) their photo; "Needs photo" shows who is still missing. Photos are resized on the phone before upload, so the free tier is plenty.
 
+### Admin tab
+The host page's **Admin** tab needs a sign-in; the Photos & guests tab stays open. To set it up once:
+1. Run the `20260929060000_device_reset`, `20260929070000_admin`, `20260929080000_admin_controls` and
+   `20260929090000_results_revealed_at` migrations.
+2. Supabase → **Authentication → Users → Add user** (email + password) for yourself, and turn off
+   **Allow new users to sign up** (Authentication → Sign In / Providers).
+3. SQL Editor: `insert into public.admins (user_id) select id from auth.users where email = 'you@example.com';`
+
+What's in it (every action is also checked in the database, so only accounts in `admins` can run them):
+- **Voting open** switch: when off, guests see "Voting is closed" and the database rejects new or changed votes.
+- **Results visible** switch: when off, the phone results page shows "Results will be revealed soon…" and the
+  big screen shows the check-in QR code and live counts instead of the standings.
+  This only hides them on those pages; vote counts are still readable from the database with the public key.
+  **30 seconds after you switch it back on**, both results pages are taken over by a full-screen
+  **Best Host** award. Name and title are at the top of `results.js` (`BEST_HOST`); put the photo in the repo
+  root as `best-host.jpg` (portrait works best). Without the photo the award shows a crown instead. Guests can
+  close it on their phones; the big screen keeps it up. Switching results off again takes it down.
+- **Vote log**: every vote by category. Flags a guest who voted more than once in a category from different
+  phones, votes cast in Dev Test Mode, and anyone who voted for themselves or their own group.
+- **Clear all votes**: deletes every vote but keeps guests and photos; phones forget their votes so everyone can vote again.
+- **Reset all guest devices**: every guest phone forgets its check-in, votes and Dev Test Mode, as if its
+  cookies were cleared. Open pages reset instantly; closed ones the next time they're opened. Nothing online is deleted.
+- **Start fresh**: after a test run, deletes every guest, group, vote and photo and resets every guest device.
+  Categories and the two switches are left as they are.
+
 Because there's no login, anyone who finds the link (or reads the page source) could edit the guest list. That's fine for a private party; if it ever matters, put the login back.
+
+## Migration checks (GitHub Actions)
+Every pull request that touches `supabase/` runs the **Migrations** workflow (`.github/workflows/migrations.yml`):
+it starts a throwaway Supabase database, creates the original tables from `supabase/ci/baseline.sql`,
+applies every migration in order, then runs `supabase/ci/smoke_test.sql` to check that guests can check in
+and vote, that only admins can use the admin controls, and that closed voting really is closed. Each run's
+summary page lists every migration and whether it applied. Nothing in it touches the real project; the
+Supabase GitHub integration still applies migrations to production when they're merged into `main`.
