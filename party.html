@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=5">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -78,6 +78,14 @@
   </footer>
 </div>
 
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Costume photo" hidden>
+  <button type="button" class="lb-x" id="lbClose" aria-label="Close photo">✕</button>
+  <img id="lbImg" alt="">
+  <div class="lb-bar">
+    <div class="lb-text"><div class="lb-name" id="lbName"></div><div class="lb-sub" id="lbSub"></div></div>
+    <button type="button" class="btn" id="lbVote"></button>
+  </div>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <nav class="nav" aria-label="Sections">
@@ -88,7 +96,7 @@
   </div>
 </nav>
 
-<script src="shared.js?v=3"></script>
+<script src="shared.js?v=5"></script>
 <script>
 // ---------- VCR clock ----------
 (function(){
@@ -256,6 +264,26 @@ async function getMyVote(categoryId){
   return getLocalVotes()[categoryId] || null;
 }
 
+async function castVote(c, category){
+  if(isOwnContestant(c) && !isDevMode()){ toast("You can't vote for yourself!", true); return false; }
+  const reg = getRegistration();
+  if(!reg){ toast('Check in first so we know who is voting.', true); return false; }
+  try{
+    const payload = { device_id: getDeviceId(), voter_entry_id: reg.entryId, category_id: category.id, entry_id: c.type==='entry' ? c.id : null, team_id: c.type==='team' ? c.id : null };
+    const { error } = await sb.from('votes').upsert(payload, { onConflict: 'device_id,category_id' });
+    if(error) throw error;
+    setLocalVote(category.id, c.id);
+    toast(`Voted for ${c.label} in ${category.name}!`);
+    currentState = await loadAll();
+    renderCategoryTabs();
+    renderVoteList(category);
+    return true;
+  }catch(e){
+    toast('Vote failed — try again.', true);
+    return false;
+  }
+}
+
 async function renderVoteList(category){
   const listEl = document.getElementById('voteList');
   const contestants = withCounts(buildContestants(category.kind, currentState), category.id, currentState.votes);
@@ -269,33 +297,49 @@ async function renderVoteList(category){
   contestants.forEach(c => {
     const own = isOwnContestant(c);
     const voted = myVote === c.id;
-    const row = document.createElement('button');
-    row.type = 'button';
-    row.className = `tape t${spineTone(c.id)}` + (voted ? ' voted' : '') + (own ? ' own' : '') + (c.photo ? ' hasphoto' : '');
-    row.setAttribute('aria-pressed', voted ? 'true' : 'false');
-    const state = voted ? `<span class="stamp">${CHECK}Voted</span>` : own ? 'You' : 'Vote';
-    row.innerHTML = (c.photo ? `<img class="photo" src="${escapeHtml(c.photo)}" alt="${escapeHtml(c.label)}'s costume" loading="lazy">` : '') + `<span class="body"><span class="name">${escapeHtml(c.label)}${c.tag ? `<span class="tag">${c.tag}</span>` : ''}</span><span class="costume">${escapeHtml(c.sub)}</span></span><span class="state">${state}</span>`;
-    row.addEventListener('click', async () => {
-      if(own && !isDevMode()){ toast("You can't vote for yourself!", true); return; }
-      const reg = getRegistration();
-      if(!reg){ toast('Check in first so we know who is voting.', true); return; }
-      if(voted && !isDevMode()) return;
-      try{
-        const payload = { device_id: getDeviceId(), voter_entry_id: reg.entryId, category_id: category.id, entry_id: c.type==='entry' ? c.id : null, team_id: c.type==='team' ? c.id : null };
-        const { error } = await sb.from('votes').upsert(payload, { onConflict: 'device_id,category_id' });
-        if(error) throw error;
-        setLocalVote(category.id, c.id);
-        toast(`Voted for ${c.label} in ${category.name}!`);
-        currentState = await loadAll();
-        renderCategoryTabs();
-        renderVoteList(category);
-      }catch(e){
-        toast('Vote failed — try again.', true);
-      }
-    });
+    const row = document.createElement('div');
+    row.className = `tape votable t${spineTone(c.id)}` + (voted ? ' voted' : '') + (own ? ' own' : '') + (c.photo ? ' hasphoto' : '');
+    const stateHtml = voted ? `<span class="stamp">${CHECK}Voted</span>` : own ? 'You' : 'Vote';
+    const info = document.createElement('button');
+    info.type = 'button'; info.className = 'tape-info';
+    info.setAttribute('aria-label', c.photo ? `See ${c.label}'s photo` : `Vote for ${c.label}`);
+    info.innerHTML = (c.photo ? `<img class="photo" src="${escapeHtml(c.photo)}" alt="" loading="lazy">` : '') + `<span class="body"><span class="name">${escapeHtml(c.label)}${c.tag ? `<span class="tag">${c.tag}</span>` : ''}</span><span class="costume">${escapeHtml(c.sub)}</span></span>`;
+    const vote = document.createElement('button');
+    vote.type = 'button'; vote.className = 'tape-vote';
+    vote.setAttribute('aria-pressed', voted ? 'true' : 'false');
+    vote.setAttribute('aria-label', `Vote for ${c.label}`);
+    vote.innerHTML = stateHtml;
+    const doVote = async () => { if(voted && !isDevMode()) return; await castVote(c, category); };
+    vote.addEventListener('click', doVote);
+    // With a photo, the name/photo opens the big view; without one there's nothing to show, so it votes.
+    info.addEventListener('click', () => c.photo ? openLightbox(c, category, { own, voted }) : doVote());
+    row.append(info, vote);
     listEl.appendChild(row);
   });
 }
+
+// ---------- Photo view ----------
+let lightboxReturn = null;
+function closeLightbox(){
+  document.getElementById('lightbox').hidden = true;
+  if(lightboxReturn){ lightboxReturn.focus(); lightboxReturn = null; }
+}
+function openLightbox(c, category, { own, voted }){
+  lightboxReturn = document.activeElement;
+  document.getElementById('lbImg').src = c.photo;
+  document.getElementById('lbImg').alt = `${c.label} — ${c.sub}`;
+  document.getElementById('lbName').textContent = c.label;
+  document.getElementById('lbSub').textContent = c.sub;
+  const btn = document.getElementById('lbVote');
+  btn.textContent = voted ? 'Voted' : own ? 'This is you' : `Vote in ${category.name}`;
+  btn.disabled = (voted && !isDevMode()) || (own && !isDevMode());
+  btn.onclick = async () => { if(await castVote(c, category)) closeLightbox(); };
+  document.getElementById('lightbox').hidden = false;
+  document.getElementById('lbClose').focus();
+}
+document.getElementById('lbClose').addEventListener('click', closeLightbox);
+document.getElementById('lightbox').addEventListener('click', e => { if(e.target.id === 'lightbox') closeLightbox(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && !document.getElementById('lightbox').hidden) closeLightbox(); });
 
 // ---------- Live updates ----------
 let refreshTimer;

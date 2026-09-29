@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=5">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="host">
@@ -56,11 +56,25 @@
   </main>
 </div>
 
+<div class="cam" id="cam" role="dialog" aria-modal="true" aria-label="Take photo" hidden>
+  <video id="camVideo" playsinline muted autoplay></video>
+  <canvas id="camShot" aria-label="Photo preview" hidden></canvas>
+  <div class="cam-top"><span id="camLabel"></span><button type="button" class="cam-x" id="camClose" aria-label="Close camera">✕</button></div>
+  <div class="cam-bar" id="camLive">
+    <button type="button" class="cam-side" id="camFlip">Flip</button>
+    <button type="button" class="cam-shutter" id="camShutter" aria-label="Take photo"></button>
+    <span class="cam-side"></span>
+  </div>
+  <div class="cam-bar" id="camReview" hidden>
+    <button type="button" class="cam-side" id="camRetake">Retake</button>
+    <button type="button" class="btn cam-use" id="camUse">Use photo</button>
+  </div>
+</div>
 <input type="file" id="fileInput" accept="image/*" capture="environment" hidden>
 <input type="file" id="libInput" accept="image/*" hidden>
 <div class="toast" id="toast" role="status" aria-live="polite" style="bottom:20px"></div>
 
-<script src="shared.js?v=3"></script>
+<script src="shared.js?v=5"></script>
 <script>
 const $ = id => document.getElementById(id);
 const ICON_CAM = '<svg class="icon" aria-hidden="true"><use href="#i-camera"/></svg>';
@@ -141,7 +155,7 @@ function fill(listEl, items, emptyText){
     const thumb = has ? `<img class="photo" src="${escapeHtml(photos[x.key])}" alt="">` : `<span class="photo empty-photo">${ICON_CAM}</span>`;
     const state_ = busy.has(x.key) ? 'Saving…' : has ? `<span class="stamp">${ICON_OK}Retake</span>` : 'Photo';
     row.innerHTML = `${thumb}<span class="body"><span class="name">${escapeHtml(x.label)}${x.tag ? `<span class="tag">${escapeHtml(x.tag)}</span>` : ''}</span><span class="costume">${escapeHtml(x.sub)}</span></span><span class="state">${state_}</span>`;
-    row.addEventListener('click', () => { target = { key: x.key, label: x.label }; $('fileInput').value = ''; $('fileInput').click(); });
+    row.addEventListener('click', () => openCamera({ key: x.key, label: x.label }));
     const edit = document.createElement('button');
     edit.type = 'button'; edit.className = 'editbtn'; edit.setAttribute('aria-expanded', openEditors.has(x.key));
     edit.setAttribute('aria-label', 'Edit ' + x.label);
@@ -274,6 +288,76 @@ $('addForm').addEventListener('submit', async ev => {
   btn.disabled = false; btn.textContent = 'Add guest';
 });
 
+// ---------- In-page camera ----------
+let stream = null, facing = 'environment', shotBlob = null;
+
+async function startStream(){
+  stopStream();
+  stream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: facing }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false
+  });
+  const v = $('camVideo');
+  v.srcObject = stream;
+  v.classList.toggle('mirror', facing === 'user'); // selfie preview only; the saved photo is not flipped
+  await v.play().catch(() => {});
+}
+function stopStream(){
+  if(stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
+  $('camVideo').srcObject = null;
+}
+function showLive(){
+  shotBlob = null;
+  $('camShot').hidden = true; $('camVideo').hidden = false;
+  $('camLive').hidden = false; $('camReview').hidden = true;
+}
+async function openCamera(t){
+  target = t;
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    toast('Camera not available here — pick a photo instead.', true);
+    $('fileInput').value = ''; $('fileInput').click(); return;
+  }
+  $('camLabel').textContent = t.label;
+  showLive();
+  $('cam').hidden = false;
+  try{ await startStream(); }
+  catch(e){
+    closeCamera();
+    toast('Camera blocked — allow camera access in your browser, or use Upload photo from library.', true);
+  }
+}
+function closeCamera(){
+  stopStream();
+  $('cam').hidden = true;
+}
+$('camClose').addEventListener('click', closeCamera);
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && !$('cam').hidden) closeCamera(); });
+$('camFlip').addEventListener('click', async () => {
+  facing = facing === 'environment' ? 'user' : 'environment';
+  try{ await startStream(); }catch(e){ facing = facing === 'environment' ? 'user' : 'environment'; toast('Could not switch camera.', true); await startStream().catch(() => {}); }
+});
+$('camShutter').addEventListener('click', () => {
+  const v = $('camVideo');
+  if(!v.videoWidth) return;
+  const scale = Math.min(1, 1200 / Math.max(v.videoWidth, v.videoHeight));
+  const c = document.createElement('canvas');
+  c.width = Math.round(v.videoWidth * scale); c.height = Math.round(v.videoHeight * scale);
+  c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+  c.toBlob(b => {
+    if(!b){ toast('Could not capture — try again.', true); return; }
+    shotBlob = b;
+    const shot = $('camShot'); shot.width = c.width; shot.height = c.height;
+    shot.getContext('2d').drawImage(c, 0, 0);
+    $('camShot').hidden = false; $('camVideo').hidden = true;
+    $('camLive').hidden = true; $('camReview').hidden = false;
+  }, 'image/jpeg', 0.85);
+});
+$('camRetake').addEventListener('click', () => { showLive(); });
+$('camUse').addEventListener('click', () => {
+  const b = shotBlob;
+  closeCamera();
+  handlePhoto(b, true);
+});
+
 // ---------- Capture → resize → upload ----------
 async function toJpeg(file, maxSide = 1200){
   const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
@@ -285,7 +369,7 @@ async function toJpeg(file, maxSide = 1200){
 }
 
 ['fileInput','libInput'].forEach(id => $(id).addEventListener('change', () => handlePhoto($(id).files[0])));
-async function handlePhoto(file){
+async function handlePhoto(file, ready = false){
   if(!file || !target) return;
   const { key, label } = target;
   const isTeam = key.startsWith('t_');
@@ -293,7 +377,7 @@ async function handlePhoto(file){
   const path = (isTeam ? 'team-' : 'entry-') + id + '.jpg';
   busy.add(key); render();
   try{
-    const blob = await toJpeg(file);
+    const blob = ready ? file : await toJpeg(file);
     const up = await sb.storage.from('photos').upload(path, blob, { upsert: true, contentType: 'image/jpeg', cacheControl: '60' });
     if(up.error) throw up.error;
     const row = { path, updated_at: new Date().toISOString() };
