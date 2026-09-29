@@ -1,0 +1,12 @@
+{
+  "name": "halloween-party-tests",
+  "private": true,
+  "description": "Browser tests for the static site. Run from this folder: npm ci && npx playwright test",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "qrcodejs": "1.0.0"
+  }
+}

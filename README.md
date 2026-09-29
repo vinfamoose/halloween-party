@@ -79,10 +79,49 @@ What's in it (every action is also checked in the database, so only accounts in 
 
 Because there's no login, anyone who finds the link (or reads the page source) could edit the guest list. That's fine for a private party; if it ever matters, put the login back.
 
-## Migration checks (GitHub Actions)
-Every pull request that touches `supabase/` runs the **Migrations** workflow (`.github/workflows/migrations.yml`):
-it starts a throwaway Supabase database, creates the original tables from `supabase/ci/baseline.sql`,
-applies every migration in order, then runs `supabase/ci/smoke_test.sql` to check that guests can check in
-and vote, that only admins can use the admin controls, and that closed voting really is closed. Each run's
-summary page lists every migration and whether it applied. Nothing in it touches the real project; the
-Supabase GitHub integration still applies migrations to production when they're merged into `main`.
+## CI (GitHub Actions)
+Every pull request runs `.github/workflows/ci.yml`, which has two jobs:
+
+- **Database migrations**: starts a throwaway Supabase database, creates the original tables from
+  `supabase/ci/baseline.sql`, applies every migration in order, then runs `supabase/ci/smoke_test.sql` to check
+  that guests can check in and vote, that only admins can use the admin controls, and that closed voting really is
+  closed. The run's summary page lists every migration and whether it applied.
+- **Front-end tests**: Playwright opens the pages in a headless browser (phone-sized, plus a 1920×1080 big
+  screen for `display.html`) against a fake Supabase client (`tests/fixtures/supabase-stub.js`), and fails on any
+  JavaScript error or broken behaviour: voting open/closed, device reset, the reveal and Best Host award timing,
+  admin sign-in and tools. The HTML report (screenshots and traces of any failures) is attached to each run.
+
+Neither job touches the real project. To run the browser tests yourself: `cd tests && npm ci && npx playwright install chromium && npx playwright test`.
+
+### Making the checks required
+A red check is only a warning until `main` is protected. `.github/rulesets/protect-main.json` is a ready-made
+ruleset: in GitHub go to **Settings → Rules → Rulesets → New ruleset → Import a ruleset** and pick that file. It:
+- requires changes to `main` to go through a pull request (no approvals needed, since it's a one-person repo),
+- requires **Database migrations** and **Front-end tests** to pass before merging,
+- blocks force-pushes and deleting `main`,
+- lets repository admins bypass it only when merging a pull request (an emergency override), not by pushing straight to `main`.
+
+## Deploy pipeline
+`.github/workflows/deploy.yml` runs on every push to `main` (so, every merged PR), one stage at a time:
+
+1. **CI**: the same two checks as a pull request (`ci.yml`).
+2. **Apply migrations to Supabase**: links the real project, prints which migrations production already
+   has and which this deploy will apply, then runs `supabase db push`.
+3. **Publish to GitHub Pages**: copies only the site files (`*.html`, `*.css`, `*.js`, `best-host.jpg`)
+   and deploys them.
+
+Each stage runs only if the previous one passed, and the database always goes first, so new pages never go
+live before the tables they need. Only one deploy runs at a time. You can also start one by hand from the
+Actions tab (**Deploy → Run workflow**).
+
+One-off setup:
+1. **Settings → Pages → Build and deployment → Source: GitHub Actions** (instead of "Deploy from a branch").
+2. **Settings → Secrets and variables → Actions → New repository secret**, twice:
+   - `SUPABASE_ACCESS_TOKEN`: create one at supabase.com → Account → Access Tokens.
+   - `SUPABASE_DB_PASSWORD`: your database password (Supabase → Project Settings → Database; reset it there if you don't have it).
+3. **Supabase → Project Settings → Integrations → GitHub**: turn off **Deploy to production**, so this
+   workflow is the only thing applying migrations.
+
+Until the secrets are set, the migrations stage fails with a message saying so, and the site isn't published
+by this workflow. On the first run, check the "Show which migrations production already has" step: every
+migration already applied should appear in the Remote column.
