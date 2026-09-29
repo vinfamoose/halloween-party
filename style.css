@@ -315,3 +315,22 @@ button.btn.danger.armed{background:var(--red-fill);color:var(--bone);border-colo
 .lb-name{font-family:var(--display);font-size:1.6rem;line-height:1.05;text-transform:uppercase;overflow-wrap:anywhere;}
 .lb-sub{color:var(--bone-dim);font-size:1rem;}
 .lb-bar .btn{width:auto;flex:none;min-width:150px;}
+
+/* ---------- Admin controls ---------- */
+.notice{margin:0 0 16px;padding:12px 14px;border:2px solid var(--red-text);border-radius:2px;color:var(--red-text);font-family:var(--osd);font-size:1.5rem;line-height:1.1;text-align:center;}
+.results .empty.reveal{font-family:var(--osd);font-size:2rem;color:var(--yellow);border-color:var(--yellow);}
+.tape-vote:disabled{cursor:not-allowed;opacity:.6;}
+.admin-block{margin-bottom:32px;}
+.admin-switches{display:grid;gap:10px;margin-bottom:8px;}
+.admin-switches .devtoggle{justify-content:space-between;width:100%;border-style:solid;font-size:1.05rem;}
+.danger-zone{display:grid;gap:16px;}
+.danger-zone .hint{margin:0 0 6px;}
+.votelog{display:grid;gap:18px;}
+.votelog h3{margin:0 0 6px;font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:1.2rem;letter-spacing:.02em;color:var(--bone);}
+.votelog ol{list-style:none;margin:0;padding:0;border-top:1px solid var(--line);}
+.votelog li{display:flex;justify-content:space-between;gap:12px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:.95rem;}
+.votelog li .to{color:var(--bone-dim);text-align:right;}
+.votelog li.flag{color:var(--red-text);}
+.votelog li .why{display:block;font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
+.votelog-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;}
+.votelog-head .title{margin:0;}

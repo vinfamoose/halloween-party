@@ -45,12 +45,18 @@ function panel(panelKey, title, icon, contestants, limit){
 }
 
 async function loadResults(){
-  let state;
-  try{ state = await loadAll(); }catch(e){
+  let state, app;
+  try{ [state, app] = await Promise.all([loadAll(), getAppState()]); }catch(e){
     if(!document.querySelector('.reel')) document.getElementById('cats').innerHTML = '<div class="empty">Could not load results. Retrying…</div>';
     return;
   }
   const catsEl = document.getElementById('cats');
+  // The admin can hide results until the reveal. (Only hidden here: vote counts are still public in the database.)
+  if(!app.results_visible){
+    catsEl.innerHTML = '<div class="empty reveal">Results will be revealed soon…</div>';
+    [prevWidth, prevVotes].forEach(m => Object.keys(m).forEach(k => delete m[k])); // bars grow from zero at the reveal
+    return;
+  }
   catsEl.innerHTML = state.categories.length ? '' : '<div class="empty">No categories are set up yet.</div>';
   state.categories.forEach(cat => {
     const sec = document.createElement('section');
@@ -77,4 +83,5 @@ sb.channel('costume-contest-results')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, scheduleLoad)
   .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, scheduleLoad)
   .on('postgres_changes', { event: '*', schema: 'public', table: 'contestant_photos' }, scheduleLoad)
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'app_state' }, scheduleLoad)
   .subscribe();

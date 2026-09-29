@@ -53,13 +53,21 @@ There is **no login**: the page uses the same public key as the guest pages, so 
 
 ### Admin tab
 The host page's **Admin** tab needs a sign-in; the Photos & guests tab stays open. To set it up once:
-1. Run the `20260929060000_device_reset` and `20260929070000_admin` migrations.
+1. Run the `20260929060000_device_reset`, `20260929070000_admin` and `20260929080000_admin_controls` migrations.
 2. Supabase → **Authentication → Users → Add user** (email + password) for yourself, and turn off
    **Allow new users to sign up** (Authentication → Sign In / Providers).
 3. SQL Editor: `insert into public.admins (user_id) select id from auth.users where email = 'you@example.com';`
 
-Admin actions are checked in the database too (`is_admin()`), so only accounts in `admins` can run them.
-
-**Reset all guest devices** (Admin tab) makes every guest phone forget its check-in, votes and device id — handy after a test run, so testers don't have to clear their cookies. Open guest pages reset instantly; closed ones reset the next time they're opened. It doesn't delete anything from the database: remove test guests with the Edit buttons (which also removes their votes).
+What's in it (every action is also checked in the database, so only accounts in `admins` can run them):
+- **Voting open** switch: when off, guests see "Voting is closed" and the database rejects new or changed votes.
+- **Results visible** switch: when off, the results and big-screen pages show "Results will be revealed soon…".
+  This only hides them on those pages; vote counts are still readable from the database with the public key.
+- **Vote log**: every vote by category. Flags a guest who voted more than once in a category from different
+  phones, votes cast in Dev Test Mode, and anyone who voted for themselves or their own group.
+- **Clear all votes**: deletes every vote but keeps guests and photos; phones forget their votes so everyone can vote again.
+- **Reset all guest devices**: every guest phone forgets its check-in, votes and Dev Test Mode, as if its
+  cookies were cleared. Open pages reset instantly; closed ones the next time they're opened. Nothing online is deleted.
+- **Start fresh**: after a test run, deletes every guest, group, vote and photo and resets every guest device.
+  Categories and the two switches are left as they are.
 
 Because there's no login, anyone who finds the link (or reads the page source) could edit the guest list. That's fine for a private party; if it ever matters, put the login back.

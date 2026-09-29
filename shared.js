@@ -34,34 +34,45 @@ function writeStore(key, value){
 }
 function readJson(key){ try{ return JSON.parse(readStore(key)); }catch(e){ return null; } }
 
-// ---------- Host "reset all guest devices" ----------
-// The host bumps app_state.reset_generation; each device remembers the last generation it saw and wipes
-// its check-in, votes and device id when the number changes. Stored outside readStore/writeStore so it
-// works the same in Dev Test Mode.
-const RESET_KEY = 'costume-contest-reset-gen';
-const DEVICE_KEYS = ['costume-contest-device-id', 'costume-contest-registration', 'costume-contest-votes', DEV_FLAG];
-function clearDeviceData(){
-  DEVICE_KEYS.forEach(k => {
+// ---------- Party state set by the admin (app_state) ----------
+// Defaults apply until the migrations are run, so the pages keep working without them.
+const APP_DEFAULTS = { reset_generation: 0, votes_generation: 0, voting_open: true, results_visible: true };
+async function getAppState(){
+  const { data } = await sb.from('app_state').select('*').eq('id', 1).maybeSingle();
+  return { ...APP_DEFAULTS, ...(data || {}) };
+}
+
+// ---------- Admin resets reaching guest devices ----------
+// The admin bumps a generation number; each device remembers the last one it saw and clears its own data
+// when it changes: reset_generation wipes check-in, votes and device id; votes_generation only the votes.
+// The seen numbers are stored outside readStore/writeStore so this works the same in Dev Test Mode.
+const VOTES_KEY = 'costume-contest-votes';
+const DEVICE_KEYS = ['costume-contest-device-id', 'costume-contest-registration', VOTES_KEY, DEV_FLAG];
+function forget(keys){
+  keys.forEach(k => {
     document.cookie = `${k}=; max-age=0; path=/; SameSite=Lax`;
     try{ localStorage.removeItem(k); }catch(e){}
+    delete memStore[k];
   });
-  Object.keys(memStore).forEach(k => delete memStore[k]);
 }
-// Resolves true if this device was wiped.
-async function applyDeviceReset(generation){
-  if(generation == null){
-    const { data } = await sb.from('app_state').select('reset_generation').eq('id', 1).maybeSingle();
-    if(!data) return false; // migration not run yet
-    generation = data.reset_generation;
-  }
+function clearDeviceData(){ forget(DEVICE_KEYS); Object.keys(memStore).forEach(k => delete memStore[k]); }
+// True if the generation changed since this device last looked (a first visit counts as having seen 0).
+function generationChanged(key, generation){
   const gen = String(generation);
-  let seen = readCookie(RESET_KEY);
-  if(seen === null){ try{ seen = localStorage.getItem(RESET_KEY); }catch(e){} }
-  const wiped = (seen ?? '0') !== gen;
-  if(wiped) clearDeviceData();
-  document.cookie = `${RESET_KEY}=${gen}; max-age=${COOKIE_MAX_AGE}; path=/; SameSite=Lax`;
-  try{ localStorage.setItem(RESET_KEY, gen); }catch(e){}
-  return wiped;
+  let seen = readCookie(key);
+  if(seen === null){ try{ seen = localStorage.getItem(key); }catch(e){} }
+  document.cookie = `${key}=${gen}; max-age=${COOKIE_MAX_AGE}; path=/; SameSite=Lax`;
+  try{ localStorage.setItem(key, gen); }catch(e){}
+  return (seen ?? '0') !== gen;
+}
+// Takes an app_state row (or fetches it). Resolves 'device', 'votes' or null for what was cleared.
+async function applyDeviceReset(app){
+  app = app || await getAppState();
+  const device = generationChanged('costume-contest-reset-gen', app.reset_generation);
+  const votes = generationChanged('costume-contest-votes-gen', app.votes_generation);
+  if(device){ clearDeviceData(); return 'device'; }
+  if(votes){ forget([VOTES_KEY]); return 'votes'; }
+  return null;
 }
 
 function getDeviceId(){
@@ -74,10 +85,10 @@ function getDeviceId(){
 function getRegistration(){ return readJson('costume-contest-registration'); }
 function setRegistration(r){ writeStore('costume-contest-registration', JSON.stringify(r)); }
 // { [categoryId]: contestantId } of votes this device has cast
-function getLocalVotes(){ return readJson('costume-contest-votes') || {}; }
+function getLocalVotes(){ return readJson(VOTES_KEY) || {}; }
 function setLocalVote(categoryId, contestantId){
   const v = getLocalVotes(); v[categoryId] = contestantId;
-  writeStore('costume-contest-votes', JSON.stringify(v));
+  writeStore(VOTES_KEY, JSON.stringify(v));
 }
 function isOwnContestant(c){
   const r = getRegistration();
