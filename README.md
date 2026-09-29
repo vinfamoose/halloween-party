@@ -40,8 +40,9 @@ no code changes needed unless you introduce a new `kind` beyond
 ## Pages
 - `party.html` — guests on phones: Check In and Vote.
 - `results.html` — live leaderboard, phone-sized on every screen (the Results tab links here).
-- `display.html` — the big projector version of the leaderboard. Open it on the TV/laptop
-  (`https://…/display.html`).
+- `display.html` — the big projector screen. Open it on the TV/laptop (`https://…/display.html`).
+  While results are hidden it shows a QR code to check in & vote, how many have checked in and voted, and
+  whether voting is open; at the reveal it becomes the leaderboard.
 - `host.html` — host page: photos, add/regroup/delete guests (no login; keep the link private).
 - `style.css` / `shared.js` — shared styles and Supabase/data logic. Both pages
   are plain static files, so GitHub Pages (free) hosts them as-is.
@@ -61,7 +62,8 @@ The host page's **Admin** tab needs a sign-in; the Photos & guests tab stays ope
 
 What's in it (every action is also checked in the database, so only accounts in `admins` can run them):
 - **Voting open** switch: when off, guests see "Voting is closed" and the database rejects new or changed votes.
-- **Results visible** switch: when off, the results and big-screen pages show "Results will be revealed soon…".
+- **Results visible** switch: when off, the phone results page shows "Results will be revealed soon…" and the
+  big screen shows the check-in QR code and live counts instead of the standings.
   This only hides them on those pages; vote counts are still readable from the database with the public key.
   **30 seconds after you switch it back on**, both results pages are taken over by a full-screen
   **Best Host** award. Name and title are at the top of `results.js` (`BEST_HOST`); put the photo in the repo

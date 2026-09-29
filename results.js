@@ -89,6 +89,34 @@ function syncAward(app){
   awardTimer = setTimeout(() => { awardEl().hidden = false; }, wait);
 }
 
+// ---------- Big screen before the reveal ----------
+// While results are hidden, the projector shows how to join in plus counts that don't give the standings away.
+const isDisplay = document.body.classList.contains('display');
+function intermission(catsEl, state, app){
+  let el = catsEl.querySelector('.intermission');
+  if(!el){
+    const url = new URL('party.html', location.href).href;
+    catsEl.innerHTML = `<section class="intermission">
+      <div class="join">
+        <div class="qr" id="joinQr" role="img" aria-label="QR code for ${escapeHtml(url)}"></div>
+        <div class="join-text"><b>Scan to check in &amp; vote</b><span>${escapeHtml(url.replace(/^https?:\/\//, ''))}</span></div>
+      </div>
+      <div class="tally">
+        <div><span class="n" id="tGuests">0</span><span class="l">Checked in</span></div>
+        <div><span class="n" id="tVotes">0</span><span class="l">Votes cast</span></div>
+        <div class="status" id="tStatus"></div>
+      </div>
+    </section>`;
+    el = catsEl.querySelector('.intermission');
+    try{ new QRCode(document.getElementById('joinQr'), { text: url, width: 512, height: 512, colorDark: '#0c0a0a', colorLight: '#efe9dc', correctLevel: QRCode.CorrectLevel.M }); }
+    catch(e){ document.getElementById('joinQr').hidden = true; } // library blocked: the link text still shows
+  }
+  document.getElementById('tGuests').textContent = state.entries.length;
+  document.getElementById('tVotes').textContent = state.votes.length;
+  document.getElementById('tStatus').textContent = app.voting_open ? 'Voting is open' : 'Voting closed — results coming up';
+  document.getElementById('tStatus').classList.toggle('closed', !app.voting_open);
+}
+
 async function loadResults(){
   let state, app;
   try{ [state, app] = await Promise.all([loadAll(), getAppState()]); }catch(e){
@@ -98,8 +126,11 @@ async function loadResults(){
   const catsEl = document.getElementById('cats');
   syncAward(app);
   // The admin can hide results until the reveal. (Only hidden here: vote counts are still public in the database.)
+  document.querySelector('.sign h1 span').textContent = app.results_visible ? 'Results' : 'Contest';
+  document.querySelector('.sign .aside p').textContent = app.results_visible ? 'Votes update as they come in' : 'Results revealed at the end of the night';
   if(!app.results_visible){
-    catsEl.innerHTML = '<div class="empty reveal">Results will be revealed soon…</div>';
+    if(isDisplay) intermission(catsEl, state, app);
+    else catsEl.innerHTML = '<div class="empty reveal">Results will be revealed soon…</div>';
     [prevWidth, prevVotes].forEach(m => Object.keys(m).forEach(k => delete m[k])); // bars grow from zero at the reveal
     return;
   }

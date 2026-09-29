@@ -351,3 +351,29 @@ button.btn.danger.armed{background:var(--red-fill);color:var(--bone);border-colo
 @keyframes award-stamp{from{opacity:0;transform:scale(1.8) rotate(-6deg);}to{opacity:1;transform:none;}}
 @keyframes award-frame{from{opacity:0;transform:translateY(30px) rotate(-8deg) scale(.9);}to{opacity:1;transform:rotate(-2deg);}}
 @media (min-width:1000px){ body.display .award-x{display:none;} }
+
+/* ---------- Big screen before the reveal ---------- */
+.intermission{display:grid;gap:28px;align-items:center;}
+.join{display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;}
+.join .qr{position:relative;z-index:51;flex-shrink:0;background:var(--bone);padding:14px;border-radius:2px;width:min(80vw,320px);aspect-ratio:1;} /* above the scanlines, so it scans cleanly */
+.join .qr img,.join .qr canvas{width:100% !important;height:100% !important;display:block;image-rendering:pixelated;}
+.join-text b{display:block;font-family:var(--display);font-weight:400;text-transform:uppercase;letter-spacing:.02em;font-size:2rem;line-height:1;color:var(--yellow);}
+.join-text span{display:block;margin-top:8px;color:var(--bone-dim);font-size:1rem;word-break:break-all;}
+.tally{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.tally > div{background:var(--shelf);border:1px solid var(--line);padding:16px;text-align:center;}
+.tally .n{display:block;font-family:var(--display);font-size:3.4rem;line-height:1;color:var(--bone);font-variant-numeric:tabular-nums;}
+.tally .l{display:block;margin-top:6px;font-family:var(--osd);font-size:1.4rem;line-height:1;color:var(--bone-dim);text-transform:uppercase;}
+.tally .status{grid-column:1 / -1;font-family:var(--osd);font-size:1.6rem;line-height:1.1;color:var(--yellow);border-color:var(--yellow);}
+.tally .status.closed{color:var(--red-text);border-color:var(--red-text);}
+@media (min-width:1000px){
+  body.display .board .cats:has(.intermission){display:block;}
+  body.display .intermission{height:100%;grid-template-columns:1.5fr 1fr;gap:5vw;padding:0 2vw;}
+  body.display .join{flex-direction:row;text-align:left;gap:3vw;}
+  body.display .join .qr{width:min(52vh,36vw);padding:1.6vh;}
+  body.display .join-text b{font-size:clamp(2.4rem,4vw,5.4rem);}
+  body.display .join-text span{font-size:clamp(1rem,1.4vw,1.8rem);margin-top:1.4vh;}
+  body.display .tally{grid-template-columns:1fr;gap:2vh;}
+  body.display .tally > div{padding:2.4vh 1.6vw;}
+  body.display .tally .n{font-size:clamp(3rem,7vw,9rem);}
+  body.display .tally .l,body.display .tally .status{font-size:clamp(1.3rem,1.8vw,2.4rem);}
+}
