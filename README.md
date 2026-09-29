@@ -79,10 +79,24 @@ What's in it (every action is also checked in the database, so only accounts in 
 
 Because there's no login, anyone who finds the link (or reads the page source) could edit the guest list. That's fine for a private party; if it ever matters, put the login back.
 
-## Migration checks (GitHub Actions)
-Every pull request that touches `supabase/` runs the **Migrations** workflow (`.github/workflows/migrations.yml`):
-it starts a throwaway Supabase database, creates the original tables from `supabase/ci/baseline.sql`,
-applies every migration in order, then runs `supabase/ci/smoke_test.sql` to check that guests can check in
-and vote, that only admins can use the admin controls, and that closed voting really is closed. Each run's
-summary page lists every migration and whether it applied. Nothing in it touches the real project; the
-Supabase GitHub integration still applies migrations to production when they're merged into `main`.
+## CI (GitHub Actions)
+Every pull request runs `.github/workflows/ci.yml`, which has two jobs:
+
+- **Database migrations**: starts a throwaway Supabase database, creates the original tables from
+  `supabase/ci/baseline.sql`, applies every migration in order, then runs `supabase/ci/smoke_test.sql` to check
+  that guests can check in and vote, that only admins can use the admin controls, and that closed voting really is
+  closed. The run's summary page lists every migration and whether it applied.
+- **Front-end tests**: Playwright opens the pages in a headless browser (phone-sized, plus a 1920×1080 big
+  screen for `display.html`) against a fake Supabase client (`tests/fixtures/supabase-stub.js`), and fails on any
+  JavaScript error or broken behaviour: voting open/closed, device reset, the reveal and Best Host award timing,
+  admin sign-in and tools. The HTML report (screenshots and traces of any failures) is attached to each run.
+
+Neither job touches the real project. To run the browser tests yourself: `cd tests && npm ci && npx playwright install chromium && npx playwright test`.
+
+### Making the checks required
+A red check is only a warning until `main` is protected. `.github/rulesets/protect-main.json` is a ready-made
+ruleset: in GitHub go to **Settings → Rules → Rulesets → New ruleset → Import a ruleset** and pick that file. It:
+- requires changes to `main` to go through a pull request (no approvals needed, since it's a one-person repo),
+- requires **Database migrations** and **Front-end tests** to pass before merging,
+- blocks force-pushes and deleting `main`,
+- lets repository admins bypass it only when merging a pull request (an emergency override), not by pushing straight to `main`.

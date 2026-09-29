@@ -1,0 +1,90 @@
+# CI: the checks every change must pass. Runs on every pull request, and is also called by
+# deploy.yml as the first stage of a deploy, so nothing reaches production without passing it.
+#
+#   Database migrations  a throwaway Supabase database gets the original tables (supabase/ci/baseline.sql),
+#                        then every migration in order, then supabase/ci/smoke_test.sql checks the access rules.
+#   Front-end tests      Playwright opens each page in a headless browser (tests/e2e/) against a fake
+#                        Supabase client, and fails on any JavaScript error or broken behaviour.
+#
+# Nothing here connects to the real Supabase project.
+name: CI
+
+on:
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migrations:
+    name: Database migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Put the CI baseline ahead of the migrations
+        # Only in this runner's copy of the repo; the baseline is never committed into migrations/.
+        run: cp supabase/ci/baseline.sql supabase/migrations/00000000000000_ci_baseline.sql
+
+      - name: Start the database and apply every migration
+        run: supabase db start
+
+      - name: Smoke-test the access rules
+        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -f supabase/ci/smoke_test.sql
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Database migrations"
+            echo "| Migration | Result |"
+            echo "|---|---|"
+            for f in supabase/migrations/*.sql; do
+              v=$(basename "$f" | cut -d_ -f1)
+              ok=$(psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -tAc \
+                "select 1 from supabase_migrations.schema_migrations where version = '$v'" 2>/dev/null)
+              echo "| \`$(basename "$f")\` | $([ "$ok" = 1 ] && echo '✅ applied' || echo '❌ not applied') |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  frontend:
+    name: Front-end tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+
+      - name: Install test dependencies
+        run: npm ci
+
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run the browser tests
+        run: npx playwright test
+
+      - name: Keep the test report
+        # Download it from the run page, unzip, and open index.html: every test, with screenshots and a
+        # step-by-step trace for any that failed.
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tests/playwright-report/
+          retention-days: 14
