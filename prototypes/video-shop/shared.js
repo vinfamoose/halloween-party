@@ -6,6 +6,14 @@ const SUPABASE_ANON_KEY = "sb_publishable_I-eXfzk5HEwkdZ2YAHIwjw_5o8SqYDl";
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// ---------- Dev Test Mode ----------
+// When on, nothing is written to cookies/localStorage (except this flag itself): registration and
+// votes live in memory only, and every vote gets a fresh device id, so one browser can act as many guests.
+const DEV_FLAG = 'costume-contest-dev-mode';
+function isDevMode(){ try{ return localStorage.getItem(DEV_FLAG) === '1'; }catch(e){ return false; } }
+function setDevMode(on){ try{ on ? localStorage.setItem(DEV_FLAG, '1') : localStorage.removeItem(DEV_FLAG); }catch(e){} }
+const memStore = {};
+
 // ---------- Persistent storage (cookie + localStorage mirror) ----------
 const COOKIE_MAX_AGE = 60*60*24*365; // 1 year
 function readCookie(key){
@@ -13,12 +21,14 @@ function readCookie(key){
   return m ? decodeURIComponent(m.slice(key.length + 1)) : null;
 }
 function readStore(key){
+  if(isDevMode()) return key in memStore ? memStore[key] : null;
   let v = readCookie(key);
   if(v === null){ try{ v = localStorage.getItem(key); }catch(e){} }
   if(v !== null) writeStore(key, v); // re-sync so both copies survive
   return v;
 }
 function writeStore(key, value){
+  if(isDevMode()){ memStore[key] = value; return; }
   document.cookie = `${key}=${encodeURIComponent(value)}; max-age=${COOKIE_MAX_AGE}; path=/; SameSite=Lax`;
   try{ localStorage.setItem(key, value); }catch(e){}
 }
@@ -35,15 +45,17 @@ async function getAppState(){
 // ---------- Admin resets reaching guest devices ----------
 // The admin bumps a generation number; each device remembers the last one it saw and clears its own data
 // when it changes: reset_generation wipes check-in, votes and device id; votes_generation only the votes.
+// The seen numbers are stored outside readStore/writeStore so this works the same in Dev Test Mode.
 const VOTES_KEY = 'costume-contest-votes';
-const DEVICE_KEYS = ['costume-contest-device-id', 'costume-contest-registration', VOTES_KEY];
+const DEVICE_KEYS = ['costume-contest-device-id', 'costume-contest-registration', VOTES_KEY, DEV_FLAG];
 function forget(keys){
   keys.forEach(k => {
     document.cookie = `${k}=; max-age=0; path=/; SameSite=Lax`;
     try{ localStorage.removeItem(k); }catch(e){}
+    delete memStore[k];
   });
 }
-function clearDeviceData(){ forget(DEVICE_KEYS); }
+function clearDeviceData(){ forget(DEVICE_KEYS); Object.keys(memStore).forEach(k => delete memStore[k]); }
 // True if the generation changed since this device last looked (a first visit counts as having seen 0).
 function generationChanged(key, generation){
   const gen = String(generation);
@@ -64,6 +76,7 @@ async function applyDeviceReset(app){
 }
 
 function getDeviceId(){
+  if(isDevMode()) return "dev_" + crypto.randomUUID(); // fresh identity per action
   let id = readStore('costume-contest-device-id');
   if(!id){ id = 'd_' + crypto.randomUUID(); writeStore('costume-contest-device-id', id); }
   return id;
@@ -128,8 +141,9 @@ function withCounts(contestants, categoryId, votes){
   return contestants.map(c => ({ ...c, votes: map[c.id] || 0 }));
 }
 
-// Suit pip for a category: categories are dealt the four suits in order, so every screen agrees.
-const SUITS = ['spade','heart','club','diamond'];
-function suitPip(i){
-  return `<svg class="pip${i % 2 ? ' red' : ''}" aria-hidden="true"><use href="#s-${SUITS[i % 4]}"/></svg>`;
+// Spine colour for a contestant: stable per id, so the shelf looks the same on every screen.
+function spineTone(id){
+  let h = 0; const s = String(id);
+  for(let i=0;i<s.length;i++) h = (h*31 + s.charCodeAt(i)) >>> 0;
+  return h % 4;
 }

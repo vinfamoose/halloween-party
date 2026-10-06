@@ -1,0 +1,246 @@
+/* Costume Contest — Gothic Royalty, prototype 1: the court cards, dressed to match the host's throne.
+   Black tufted leather studded in gold, antique-brass scrollwork, gold skulls.
+   Categories are suits, every contestant is a card, and the one you vote for turns face-up. */
+
+:root{
+  --tuft:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='48' height='72'%3E%3Cdefs%3E%3CradialGradient id='p'%3E%3Cstop offset='0' stop-color='%231d1d23'/%3E%3Cstop offset='.72' stop-color='%23111115'/%3E%3Cstop offset='1' stop-color='%23040405'/%3E%3C/radialGradient%3E%3Cpath id='d' d='M24 0l24 36-24 36L0 36z' fill='url(%23p)'/%3E%3C/defs%3E%3Crect width='48' height='72' fill='%23040405'/%3E%3Cuse xlink:href='%23d'/%3E%3Cuse xlink:href='%23d' x='-24' y='-36'/%3E%3Cuse xlink:href='%23d' x='24' y='-36'/%3E%3Cuse xlink:href='%23d' x='-24' y='36'/%3E%3Cuse xlink:href='%23d' x='24' y='36'/%3E%3Cg fill='%23c8961f'%3E%3Ccircle cx='24' cy='0' r='2.3'/%3E%3Ccircle cx='24' cy='72' r='2.3'/%3E%3Ccircle cx='0' cy='36' r='2.3'/%3E%3Ccircle cx='48' cy='36' r='2.3'/%3E%3C/g%3E%3C/svg%3E");
+  --skull:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='40 2 40 40'%3E%3Cpath fill='%23e0ae2c' fill-rule='evenodd' d='M60 4c-11 0-18 7.5-18 17 0 5 2 8.5 5 11v5c0 2 1.5 3.5 3.5 3.5H52v-4h3v4h3v-4h4v4h3v-4h3v4h1.5c2 0 3.5-1.5 3.5-3.5v-5c3-2.5 5-6 5-11 0-9.5-7-17-18-17zM48.8 22a4.2 4.6 0 108.4 0 4.2 4.6 0 10-8.4 0zM62.8 22a4.2 4.6 0 108.4 0 4.2 4.6 0 10-8.4 0zM60 27.5l-2.4 4.7h4.8z'/%3E%3C/svg%3E");
+  --scroll:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 18' fill='none' stroke='%23a89c6c' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M88 9C74 9 70 2 60 2S46 9 36 9 22 3 14 3 3 8 3 11s3 5 6 4 3-5 0-5'/%3E%3Cpath d='M60 16c-8 0-12-7-24-7'/%3E%3C/svg%3E");
+  --night:#0a0a0c; --card:#15151a; --card-2:#1e1e26; --line:#3a3a47;
+  --bone:#e6dfcc; --brass:#a89c6c;
+  --gold:#e0ae2c; --gold-hi:#f6d56b; --gold-deep:#8a6a10;
+  --face:#ece8df; --ink:#101014; --ink-dim:#4a4752;
+  --blood:#e0233f; --blood-text:#ff5a72; --blood-face:#b3122d;
+  --display:'Grenze Gotisch','Grenze',Georgia,serif;
+  --body:'Grenze',Georgia,'Times New Roman',serif;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --nav-h:72px;
+}
+*{box-sizing:border-box;}
+html{color-scheme:dark;-webkit-text-size-adjust:100%;}
+body{
+  margin:0;color:var(--bone);font-family:var(--body);font-size:1.1rem;line-height:1.35;
+  min-height:100vh;min-height:100dvh;padding:0 16px calc(var(--nav-h) + 40px);
+  accent-color:var(--bone);caret-color:var(--blood-text);
+  /* the throne back: diamond-tufted black leather, a gold stud at every crossing */
+  background:var(--night) var(--tuft) 50% 0/48px 72px;
+}
+::selection{background:var(--blood);color:#fff;}
+*{scrollbar-width:thin;scrollbar-color:var(--line) var(--night);}
+::-webkit-scrollbar{width:8px;height:8px;} ::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+:focus-visible{outline:3px solid var(--blood-text);outline-offset:2px;}
+[hidden]{display:none !important;}
+.icon{width:1.5em;height:1.5em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;}
+.pip{width:1em;height:1em;fill:currentColor;flex:none;}
+.pip.red{color:var(--blood);}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+.wrap{max-width:520px;margin:0 auto;}
+
+/* ---------- masthead: symmetrical, like everything on a card ---------- */
+.masthead{padding:26px 0 22px;text-align:center;}
+.masthead h1{margin:0 0 12px;font-family:var(--display);font-weight:900;font-size:clamp(3.4rem,18vw,4.9rem);line-height:.88;letter-spacing:.005em;color:var(--face);}
+.masthead h1 > span{display:block;}
+.masthead .pips{display:flex;align-items:center;justify-content:center;gap:14px;margin:12px 0 8px;font-size:1.05rem;color:var(--bone);}
+.masthead .pips::before,.masthead .pips::after{content:"";flex:1;max-width:84px;height:1px;background:var(--brass);}
+.masthead p{margin:0;color:var(--brass);}
+.masthead p b{color:var(--bone);font-weight:600;}
+
+/* ---------- bottom nav ---------- */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:#0e0e12;border-top:1px solid var(--brass);padding-bottom:env(safe-area-inset-bottom);}
+.nav-inner{display:flex;gap:6px;width:100%;max-width:520px;margin:0 auto;padding:6px;}
+.nav button{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:calc(var(--nav-h) - 12px);padding:4px;
+  border:0;border-radius:8px;background:none;color:var(--brass);cursor:pointer;
+  font-family:var(--body);font-weight:700;font-size:1rem;letter-spacing:.08em;text-transform:uppercase;
+  transition:background .2s,color .2s;
+}
+.nav button:hover{color:var(--bone);}
+.nav .active{background:var(--face);color:var(--ink);}
+.nav .active:hover{color:var(--ink);}
+.nav .icon{width:24px;height:24px;}
+
+/* ---------- panels + form ---------- */
+.panel{animation:panel-in .35s var(--ease) both;}
+@keyframes panel-in{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+
+.slip,.receipt{position:relative;background:var(--card);border:1px solid var(--brass);border-radius:12px;padding:26px 22px 22px;margin-bottom:20px;box-shadow:0 8px 18px rgba(0,0,0,.5);}
+.slip::after,.receipt::after,.entry::after{content:"";position:absolute;inset:5px;border:1px solid var(--line);border-radius:8px;pointer-events:none;}
+h2.title{margin:0 0 18px;font-family:var(--display);font-weight:700;font-size:2.2rem;line-height:1;text-align:center;color:var(--face);}
+label{display:block;margin-bottom:6px;font-weight:600;font-size:1.05rem;color:var(--bone);}
+.hint{margin:-8px 0 18px;font-size:.98rem;color:var(--brass);}
+input[type=text],select{
+  width:100%;min-height:52px;margin-bottom:18px;padding:12px 14px;background:var(--night);color:var(--face);
+  border:1px solid var(--line);border-bottom:2px solid var(--brass);border-radius:6px;font-family:var(--body);font-size:1.15rem;transition:border-color .15s,box-shadow .15s;
+}
+input[type=text]::placeholder{color:#8d90a0;}
+input[type=text]:focus,select:focus{outline:none;border-color:var(--bone);box-shadow:0 0 0 3px rgba(224,174,44,.35);}
+select{appearance:none;-webkit-appearance:none;padding-right:44px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='10' viewBox='0 0 16 10'%3E%3Cpath d='M1 1l7 7 7-7' fill='none' stroke='%23e0ae2c' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 16px center;}
+select option{background:var(--card);color:var(--face);}
+
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:58px;padding:10px 16px;border:0;border-radius:8px;
+  background:var(--face);color:var(--ink);font-family:var(--display);font-weight:700;font-size:1.6rem;letter-spacing:.02em;cursor:pointer;
+  box-shadow:0 4px 10px rgba(0,0,0,.45);transition:transform .15s var(--ease),background .15s;
+}
+.btn:hover{background:#fff;}
+.btn:active{transform:translateY(1px) scale(.99);}
+.btn:disabled{background:var(--line);color:var(--brass);box-shadow:none;cursor:not-allowed;}
+.msg{min-height:1.4em;margin:12px 0 0;text-align:center;font-weight:600;color:var(--blood-text);}
+
+/* checked in: your own card, face-up */
+.receipt{background:var(--face);color:var(--ink);border-color:var(--face);text-align:center;padding:22px;}
+.receipt::after{border-color:#b9b4a8;}
+.receipt .crown{width:34px;height:34px;color:var(--blood-face);}
+.receipt .stub{font-weight:700;font-size:.95rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);}
+.receipt .who{margin:4px 0 2px;font-family:var(--display);font-weight:900;font-size:2.6rem;line-height:1;overflow-wrap:anywhere;}
+.receipt .as{margin:0;color:var(--ink-dim);}
+
+.share{text-align:center;}
+.share-title{margin:0;font-family:var(--body);font-weight:600;font-size:1.05rem;color:var(--bone);}
+.qr-box{width:fit-content;margin:14px auto 10px;padding:12px;background:var(--face);border-radius:6px;}
+.qr-link{font-size:.95rem;color:var(--brass);}
+
+/* ---------- vote: suits + the deck ---------- */
+.ballot{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 10px;font-weight:600;font-size:1.05rem;letter-spacing:.06em;text-transform:uppercase;color:var(--brass);}
+.ballot b{color:var(--face);font-variant-numeric:tabular-nums;}
+.cats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:22px;}
+.cat{
+  display:flex;align-items:center;gap:10px;min-height:58px;padding:8px 12px;text-align:left;cursor:pointer;
+  background:var(--card);border:1px solid var(--line);border-radius:8px;color:var(--bone);
+  font-family:var(--body);font-weight:600;font-size:1.08rem;line-height:1.1;transition:background .2s,color .2s,border-color .2s;
+}
+.cat .pip{font-size:1.35rem;}
+.cat-name{flex:1;}
+.cat-done .icon{width:20px;height:20px;color:var(--brass);}
+.cat:hover{border-color:var(--brass);}
+.cat[aria-selected="true"]{background:var(--face);border-color:var(--face);color:var(--ink);}
+.cat[aria-selected="true"] .pip.red{color:var(--blood-face);}
+.cat[aria-selected="true"] .cat-done .icon{color:var(--ink);}
+
+.deck{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.entry{
+  position:relative;display:flex;flex-direction:column;min-height:252px;padding:14px 12px 12px;
+  background:var(--card);border:1px solid var(--brass);border-radius:12px;box-shadow:0 8px 16px rgba(0,0,0,.5);
+  transition:transform .25s var(--ease),border-color .2s;
+}
+.entry:hover{transform:translateY(-3px);border-color:var(--bone);}
+.idx{position:absolute;z-index:1;display:flex;flex-direction:column;align-items:center;gap:1px;width:22px;font-size:.9rem;line-height:1;color:var(--bone);pointer-events:none;}
+.idx b{font-family:var(--display);font-weight:700;font-size:1.35rem;}
+.idx.tl{top:12px;left:11px;}
+.idx.br{bottom:12px;right:11px;transform:rotate(180deg);}
+.entry-info{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-width:0;padding:0 18px;
+  border:0;border-radius:6px;background:none;color:inherit;font:inherit;text-align:center;cursor:pointer;
+}
+.portrait{display:flex;align-items:center;justify-content:center;width:100%;}
+.portrait .mono{font-family:var(--display);font-weight:900;font-size:5rem;line-height:.9;color:var(--bone);}
+.portrait img{display:block;width:100%;aspect-ratio:4/5;object-fit:cover;border:1px solid var(--brass);border-radius:4px;filter:grayscale(1) contrast(1.05);}
+.body{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;max-width:100%;}
+.name{font-family:var(--display);font-weight:700;font-size:1.5rem;line-height:1;color:var(--face);overflow-wrap:anywhere;}
+.costume{font-size:1rem;line-height:1.2;color:var(--brass);}
+.tag{padding:1px 8px;border:1px solid var(--brass);border-radius:999px;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brass);}
+.entry-vote{
+  align-self:center;display:flex;align-items:center;justify-content:center;min-width:88px;min-height:48px;margin-top:12px;padding:6px 12px;
+  background:none;border:1px solid var(--bone);border-radius:999px;color:var(--face);
+  font-family:var(--display);font-weight:700;font-size:1.25rem;letter-spacing:.03em;cursor:pointer;transition:background .15s,color .15s;
+}
+.entry-vote:hover{background:var(--face);color:var(--ink);}
+.stamp{display:inline-flex;align-items:center;gap:5px;}
+.stamp .icon{width:18px;height:18px;}
+
+/* the vote: the card turns face-up */
+.entry.voted{background:var(--face);border-color:var(--face);color:var(--ink);}
+.entry.voted::after{border-color:#b9b4a8;}
+.entry.voted .name,.entry.voted .portrait .mono,.entry.voted .idx{color:var(--ink);}
+.entry.voted .costume,.entry.voted .tag{color:var(--ink-dim);border-color:var(--ink-dim);}
+.entry.voted .pip.red{color:var(--blood-face);}
+.entry.voted .portrait img{border-color:var(--ink);}
+.entry.voted .entry-vote{background:var(--ink);border-color:var(--ink);color:var(--face);cursor:default;}
+.entry.just{animation:turn .7s var(--ease) both;}
+@keyframes turn{
+  0%{transform:perspective(900px) rotateY(-180deg) scale(.96);background:var(--card);color:transparent;}
+  49%{background:var(--card);}
+  50%{transform:perspective(900px) rotateY(-90deg) scale(1.04);background:var(--face);}
+  100%{transform:perspective(900px) rotateY(0) scale(1);}
+}
+.entry.own{opacity:.55;}
+.entry.own:hover{transform:none;border-color:var(--brass);}
+.entry.own .entry-vote,.entry.own .entry-info{cursor:not-allowed;}
+.entry.own .entry-vote{border-style:dashed;color:var(--brass);}
+.entry.own .entry-vote:hover{background:none;color:var(--brass);}
+
+.empty{grid-column:1 / -1;padding:36px 12px;text-align:center;color:var(--brass);border:1px dashed var(--line);border-radius:12px;}
+.toast{
+  position:fixed;left:16px;right:16px;bottom:calc(var(--nav-h) + 14px + env(safe-area-inset-bottom));z-index:45;max-width:488px;margin:0 auto;
+  padding:14px 16px;background:var(--face);color:var(--ink);border-radius:8px;font-weight:600;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,.6);
+  opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .25s,transform .35s var(--ease);
+}
+.toast.show{opacity:1;transform:none;}
+.toast.err{background:var(--blood);color:#fff;}
+
+.protofoot{display:flex;align-items:center;justify-content:center;gap:14px;padding:30px 0 0;font-size:.98rem;color:var(--brass);}
+.protofoot button{min-height:44px;padding:6px 16px;background:none;border:1px dashed var(--brass);border-radius:999px;color:var(--bone);font:inherit;font-weight:600;cursor:pointer;}
+.protofoot button:hover{border-style:solid;}
+
+/* ---------- photo view ---------- */
+.lightbox{position:fixed;inset:0;z-index:80;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:16px;background:rgba(6,6,8,.95);}
+.lightbox img{display:block;width:100%;max-width:520px;max-height:calc(100dvh - 200px);object-fit:contain;border:1px solid var(--brass);border-radius:10px;}
+.lb-frame{width:100%;display:flex;justify-content:center;}
+.lb-x{position:absolute;top:calc(12px + env(safe-area-inset-top));right:16px;z-index:2;display:flex;align-items:center;justify-content:center;width:48px;height:48px;border:1px solid var(--brass);border-radius:50%;background:var(--night);color:var(--face);cursor:pointer;}
+.lb-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;max-width:520px;}
+.lb-text{min-width:0;}
+.lb-name{font-family:var(--display);font-weight:700;font-size:1.9rem;line-height:1;color:var(--face);overflow-wrap:anywhere;}
+.lb-sub{color:var(--brass);}
+.lb-bar .btn{width:auto;flex:none;min-width:150px;font-size:1.25rem;}
+
+
+/* ---------- the throne ---------- */
+/* crest: the gold skull between bat wings, as on the throne's crown */
+.crest{display:block;width:150px;height:60px;margin:0 auto 6px;filter:drop-shadow(0 5px 6px rgba(0,0,0,.7));}
+.crest .wing{fill:var(--brass);}
+.crest .skull{fill:var(--gold);fill-rule:evenodd;}
+.masthead{padding-top:18px;}
+.masthead h1{color:var(--gold);text-shadow:0 3px 0 #000,0 8px 14px rgba(0,0,0,.7);}
+.masthead .pips{color:var(--bone);}
+.masthead .pips::before,.masthead .pips::after{height:18px;max-width:90px;background:var(--scroll) center/contain no-repeat;}
+.masthead .pips::after{transform:scaleX(-1);}
+.masthead p{width:fit-content;margin:0 auto;padding:8px 18px;background:var(--night);border-radius:14px;color:var(--bone);}
+.masthead p b{display:block;color:var(--gold);}
+.ballot,.protofoot{text-shadow:0 1px 3px #000,0 0 8px #000;color:var(--bone);}
+
+/* the apron skull, front and centre on every panel */
+.slip::before,.receipt::before{content:"";position:absolute;z-index:1;top:-17px;left:50%;width:34px;height:34px;margin-left:-17px;background:var(--skull) center/contain no-repeat;filter:drop-shadow(0 3px 3px rgba(0,0,0,.8));}
+.slip,.receipt{margin-top:26px;padding-top:32px;}
+.receipt .crown{display:none;}
+.share-title{color:var(--bone);}
+
+/* gold where the throne is gold */
+.btn{background:var(--gold);color:var(--ink);}
+.btn:hover{background:var(--gold-hi);}
+.nav{border-top-color:var(--gold);}
+.nav .active{background:var(--gold);}
+:focus-visible{outline-color:var(--gold-hi);}
+.cat .cat-done .icon{color:var(--gold);}
+.cat[aria-selected="true"] .cat-done .icon{color:var(--gold-deep);}
+.idx b{color:var(--gold);}
+.entry-vote{border-color:var(--gold);}
+.entry-vote:hover{background:var(--gold);color:var(--ink);}
+.entry.voted .entry-vote,.entry.voted .entry-vote:hover{background:var(--ink);border-color:var(--ink);color:var(--gold);}
+.entry.voted .idx b{color:var(--gold-deep);}
+.entry.voted::after,.receipt::after{border-color:var(--gold-deep);}
+.lb-x{border-color:var(--gold);}
+
+/* every contestant sits on the throne: an arched, tufted back with a beaded gold edge */
+.portrait{position:relative;width:100%;aspect-ratio:4/5;overflow:hidden;background:var(--night) var(--tuft) 50% 0/24px 36px;
+  border:3px dotted var(--gold);border-radius:50% 50% 10px 10px / 34% 34% 10px 10px;box-shadow:0 0 0 3px var(--night),0 0 0 4px var(--brass),0 8px 12px rgba(0,0,0,.55);}
+.entry-info{padding:6px 20px 0;}
+.portrait .mono,.entry.voted .portrait .mono{color:var(--gold);font-size:4.6rem;text-shadow:0 3px 0 #000,0 6px 10px rgba(0,0,0,.8);}
+.portrait img,.entry.voted .portrait img{width:100%;height:100%;aspect-ratio:auto;border:0;border-radius:0;}
+.lightbox img{border-color:var(--gold);}
+
+@media (max-width:359px){ .deck{grid-template-columns:1fr;} }
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;}
+}

@@ -5,7 +5,6 @@ const path = require('path');
 const { test: base, expect } = require('@playwright/test');
 
 const STUB = fs.readFileSync(path.join(__dirname, '../fixtures/supabase-stub.js'), 'utf8');
-const QRCODE = fs.readFileSync(require.resolve('qrcodejs/qrcode.min.js'), 'utf8');
 
 const IDS = { male: 'cat-m', female: 'cat-f', duo: 'cat-d', group: 'cat-g' };
 
@@ -29,7 +28,7 @@ function partyData(app = {}){
     votes: [
       { device_id: 'd_1', category_id: IDS.male, entry_id: 'e1', team_id: null, voter_entry_id: 'e3', created_at: '2026-10-31T20:00:00Z' },
       { device_id: 'd_2', category_id: IDS.male, entry_id: 'e2', team_id: null, voter_entry_id: 'e3', created_at: '2026-10-31T20:01:00Z' },
-      { device_id: 'dev_x', category_id: IDS.group, entry_id: null, team_id: 't1', voter_entry_id: 'e1', created_at: '2026-10-31T20:02:00Z' }
+      { device_id: 'd_3', category_id: IDS.group, entry_id: null, team_id: 't1', voter_entry_id: 'e1', created_at: '2026-10-31T20:02:00Z' }
     ],
     contestant_photos: [],
     app_state: [{ id: 1, reset_generation: 0, votes_generation: 0, voting_open: true, results_visible: true, results_revealed_at: null, ...app }]
@@ -43,7 +42,6 @@ const test = base.extend({
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
     await page.route(/supabase-js/, r => r.fulfill({ contentType: 'text/javascript', body: STUB }));
-    await page.route(/qrcode\.min\.js/, r => r.fulfill({ contentType: 'text/javascript', body: QRCODE }));
     await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort());
     await use(async (url, { db = partyData(), auth = { session: null, admin: false }, storage = {} } = {}) => {
       await page.addInitScript(([db, auth, storage]) => {

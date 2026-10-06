@@ -2,13 +2,13 @@
 const { test, expect, partyData, checkedIn } = require('./helpers');
 
 // Each row has a Vote button on the right (the row itself also votes when there's no photo).
-const voteButton = (page, name) => page.locator(`.tape-vote[aria-label="Vote for ${name}"]`);
+const voteButton = (page, name) => page.locator(`.entry-vote[aria-label="Vote for ${name}"]`);
 
 test('a guest can vote while voting is open', async ({ openPage }) => {
   const page = await openPage('/party.html', { storage: checkedIn });
   await expect(page.locator('#votingClosed')).toBeHidden();
   await voteButton(page, 'Sam').click();
-  await expect(page.locator('#toast')).toContainText('Voted for Sam');
+  await expect(page.locator('#toast')).toContainText('You crowned Sam');
 });
 
 test('a guest cannot vote for themselves', async ({ openPage }) => {

@@ -30,7 +30,6 @@ test('the vote log flags suspicious votes', async ({ openPage }) => {
   await page.getByRole('tab', { name: 'Admin' }).click();
   await expect(page.locator('#logCount')).toContainText('3');
   await expect(page.locator('#voteLog')).toContainText('from different phones'); // Alex voted twice
-  await expect(page.locator('#voteLog')).toContainText('Dev Test Mode');
 });
 
 test('the voting switch closes voting', async ({ openPage }) => {

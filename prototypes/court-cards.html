@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#050506">
+<title>Costume Contest — Court Cards prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@500;700;900&family=Grenze:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="court-cards.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="s-spade" viewBox="0 0 24 24"><path d="M12 2C8 7 3 10 3 14.5a4.5 4.5 0 007.6 3.2C10.3 19.6 9.6 21 8 22h8c-1.6-1-2.3-2.4-2.6-4.3A4.5 4.5 0 0021 14.5C21 10 16 7 12 2z"/></symbol>
+  <symbol id="s-heart" viewBox="0 0 24 24"><path d="M12 21.5C5 15.6 2 12 2 8.2A5 5 0 0112 6a5 5 0 0110 2.2c0 3.800-3 7.4-10 13.3z"/></symbol>
+  <symbol id="s-club" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4.4"/><circle cx="6.6" cy="13.8" r="4.4"/><circle cx="17.4" cy="13.8" r="4.4"/><path d="M12 10c0 6-.8 9.500-3 12h6c-2.200-2.500-3-6-3-12z"/></symbol>
+  <symbol id="s-diamond" viewBox="0 0 24 24"><path d="M12 1.500l8 10.500-8 10.500L4 12z"/></symbol>
+  <symbol id="i-slip" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></symbol>
+  <symbol id="i-cards" viewBox="0 0 24 24"><rect x="3" y="6" width="11" height="15" rx="1.500" transform="rotate(-8 8.500 13.500)"/><rect x="10" y="4" width="11" height="15" rx="1.500" transform="rotate(8 15.500 11.500)"/></symbol>
+  <symbol id="i-crown" viewBox="0 0 24 24"><path d="M4 18h16M5 18L3.500 8l5 4L12 5l3.500 7 5-4L19 18"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+</svg>
+
+<div class="wrap">
+  <header class="masthead">
+    <svg class="crest" viewBox="0 0 120 46" aria-hidden="true"><path class="wing" d="M42 15C30 5 16 3 3 9c7 1 11 4 12 10 4-4 8-4 11 0 2-3 6-3 9 0 2-2 5-2 7 0z"/><path class="wing" transform="translate(120 0) scale(-1 1)" d="M42 15C30 5 16 3 3 9c7 1 11 4 12 10 4-4 8-4 11 0 2-3 6-3 9 0 2-2 5-2 7 0z"/><path class="skull" d="M60 4c-11 0-18 7.5-18 17 0 5 2 8.5 5 11v5c0 2 1.5 3.5 3.5 3.5H52v-4h3v4h3v-4h4v4h3v-4h3v4h1.5c2 0 3.5-1.5 3.5-3.5v-5c3-2.5 5-6 5-11 0-9.5-7-17-18-17zM48.8 22a4.2 4.6 0 108.4 0 4.2 4.6 0 10-8.4 0zM62.8 22a4.2 4.6 0 108.4 0 4.2 4.6 0 10-8.4 0zM60 27.5l-2.4 4.7h4.8z"/></svg>
+    <h1><span>Costume</span>
+      <span class="pips" aria-hidden="true"><svg class="pip"><use href="#s-spade"/></svg><svg class="pip red"><use href="#s-heart"/></svg><svg class="pip"><use href="#s-club"/></svg><svg class="pip red"><use href="#s-diamond"/></svg></span>
+      <span>Contest</span></h1>
+    <p><b>Gothic Royalty.</b> Check in, then vote for the best looks</p>
+  </header>
+
+  <main>
+    <section id="register-panel" class="panel">
+      <div class="receipt" id="registeredCard" hidden>
+        <svg class="icon crown" aria-hidden="true"><use href="#i-crown"/></svg>
+        <div class="stub">Checked in</div>
+        <div class="who" id="registeredName"></div>
+        <p class="as" id="registeredText"></p>
+      </div>
+
+      <form class="slip" id="registerForm" novalidate>
+        <h2 class="title">Check in</h2>
+        <label for="nameInput">Your name</label>
+        <input type="text" id="nameInput" placeholder="e.g. Jordan" maxlength="40" autocomplete="given-name">
+        <label for="costumeInput">Your costume</label>
+        <input type="text" id="costumeInput" placeholder="e.g. Zombie Bride" maxlength="60">
+        <label for="genderInput">Gender</label>
+        <select id="genderInput">
+          <option value="">Choose one…</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+        <div class="hint">Used to place solo entries in Individual Male or Individual Female.</div>
+        <label for="groupSelect">Duo / group costume name (optional)</label>
+        <select id="groupSelect"><option value="">None — I'm solo</option></select>
+        <input type="text" id="groupInput" placeholder="New group name, e.g. Ghostbusters Crew" maxlength="60" aria-label="New group name" hidden>
+        <div class="hint">Pick your group if someone in it has already checked in. Otherwise choose &lt;Add New&gt; and name it — everyone in your couple or group picks that same group.</div>
+        <button type="submit" class="btn" id="registerBtn">Check In</button>
+        <div class="msg" id="registerMsg" role="alert"></div>
+      </form>
+
+      <div class="slip share">
+        <h2 class="share-title">Share this to let others check in</h2>
+        <div class="qr-box"><div id="qrcode"></div></div>
+        <div class="qr-link" id="qrLink"></div>
+      </div>
+    </section>
+
+    <section id="vote-panel" class="panel" hidden>
+      <div class="ballot"><span>Your ballot</span><span id="ballotCount"></span></div>
+      <div class="cats" id="categoryTabs" role="tablist" aria-label="Categories"></div>
+      <div class="deck" id="voteList"></div>
+    </section>
+  </main>
+  <footer class="protofoot">
+    <span>Prototype on sample data</span>
+    <button type="button" id="resetBtn">Reset</button>
+  </footer>
+</div>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Costume photo" hidden>
+  <button type="button" class="lb-x" id="lbClose" aria-label="Close photo"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+  <div class="lb-frame" id="lbFrame"></div>
+  <div class="lb-bar">
+    <div class="lb-text"><div class="lb-name" id="lbName"></div><div class="lb-sub" id="lbSub"></div></div>
+    <button type="button" class="btn" id="lbVote"></button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<nav class="nav" aria-label="Sections">
+  <div class="nav-inner">
+    <button type="button" data-tab="register"><svg class="icon"><use href="#i-slip"/></svg>Check In</button>
+    <button type="button" data-tab="vote"><svg class="icon"><use href="#i-cards"/></svg>Vote</button>
+    <button type="button" data-soon><svg class="icon"><use href="#i-crown"/></svg>Results</button>
+  </div>
+</nav>
+
+<script>
+const SUITS = ['spade','heart','club','diamond'];
+const pip = i => `<svg class="pip${i % 2 ? ' red' : ''}" aria-hidden="true"><use href="#s-${SUITS[i % 4]}"/></svg>`;
+window.THEME = {
+  votedIcon:'i-crown',
+  qr:{ dark:'#101014', light:'#ece8df' },
+  tabExtra:(cat, i) => pip(i),
+  // corner indices, like a real card: the initial over the category's suit, repeated upside-down
+  entryExtra:(c, i, cat, catIndex) => {
+    const idx = `<b>${c.label.trim().charAt(0).toUpperCase().replace(/[&<>"']/g,'')}</b>${pip(catIndex)}`;
+    return `<span class="idx tl" aria-hidden="true">${idx}</span><span class="idx br" aria-hidden="true">${idx}</span>`;
+  }
+};
+</script>
+<script src="proto.js"></script>
+</body>
+</html>
