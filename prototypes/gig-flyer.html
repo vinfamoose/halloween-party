@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#e8e5de">
+<title>Costume Contest — Gig Flyer prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Sofia+Sans+Extra+Condensed:wght@700;900&family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="gig-flyer.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-slip" viewBox="0 0 24 24"><path d="M5 3h14v18l-3.500-2-3.500 2-3.500-2L5 21z"/><path d="M9 8h6M9 12h6"/></symbol>
+  <symbol id="i-ballot" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/><path d="M8 8l8 8M16 8l-8 8"/></symbol>
+  <symbol id="i-crown" viewBox="0 0 24 24"><path d="M4 19h16M5 19L3.500 8l5 4.500L12 5l3.500 7.500 5-4.500L19 19"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+</svg>
+
+<div class="wrap">
+  <header class="masthead">
+    <svg class="scrawl" viewBox="0 0 120 76" aria-hidden="true"><path d="M12 62L15 20l25 25L61 8l20 37 25-24 2 41z"/><path d="M9 70c30-5 70-6 103-2"/></svg>
+    <h1><span>Costume</span> <span class="bar">Contest</span></h1>
+    <p class="royal">Gothic Royalty</p>
+    <p class="sub">Check in, then vote for the best looks</p>
+  </header>
+
+  <main>
+    <section id="register-panel" class="panel">
+      <div class="receipt" id="registeredCard" hidden>
+        <div class="stub">Checked in</div>
+        <div class="who" id="registeredName"></div>
+        <p class="as" id="registeredText"></p>
+      </div>
+
+      <form class="slip" id="registerForm" novalidate>
+        <h2 class="title"><span>Check in</span></h2>
+        <label for="nameInput">Your name</label>
+        <input type="text" id="nameInput" placeholder="e.g. Jordan" maxlength="40" autocomplete="given-name">
+        <label for="costumeInput">Your costume</label>
+        <input type="text" id="costumeInput" placeholder="e.g. Zombie Bride" maxlength="60">
+        <label for="genderInput">Gender</label>
+        <select id="genderInput">
+          <option value="">Choose one…</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+        <div class="hint">Used to place solo entries in Individual Male or Individual Female.</div>
+        <label for="groupSelect">Duo / group costume name (optional)</label>
+        <select id="groupSelect"><option value="">None — I'm solo</option></select>
+        <input type="text" id="groupInput" placeholder="New group name, e.g. Ghostbusters Crew" maxlength="60" aria-label="New group name" hidden>
+        <div class="hint">Pick your group if someone in it has already checked in. Otherwise choose &lt;Add New&gt; and name it — everyone in your couple or group picks that same group.</div>
+        <button type="submit" class="btn" id="registerBtn">Check In</button>
+        <div class="msg" id="registerMsg" role="alert"></div>
+      </form>
+
+      <div class="slip share">
+        <h2 class="share-title">Share this to let others check in</h2>
+        <div class="qr-box"><div id="qrcode"></div></div>
+        <div class="qr-link" id="qrLink"></div>
+      </div>
+    </section>
+
+    <section id="vote-panel" class="panel" hidden>
+      <div class="ballot"><span>Your ballot</span><span id="ballotCount"></span></div>
+      <div class="cats" id="categoryTabs" role="tablist" aria-label="Categories"></div>
+      <div class="bill" id="voteList"></div>
+    </section>
+  </main>
+  <footer class="protofoot">
+    <span>Prototype on sample data</span>
+    <button type="button" id="resetBtn">Reset</button>
+  </footer>
+</div>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Costume photo" hidden>
+  <button type="button" class="lb-x" id="lbClose" aria-label="Close photo"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+  <div class="lb-frame" id="lbFrame"></div>
+  <div class="lb-bar">
+    <div class="lb-text"><div class="lb-name" id="lbName"></div><div class="lb-sub" id="lbSub"></div></div>
+    <button type="button" class="btn" id="lbVote"></button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<nav class="nav" aria-label="Sections">
+  <div class="nav-inner">
+    <button type="button" data-tab="register"><svg class="icon"><use href="#i-slip"/></svg>Check In</button>
+    <button type="button" data-tab="vote"><svg class="icon"><use href="#i-ballot"/></svg>Vote</button>
+    <button type="button" data-soon><svg class="icon"><use href="#i-crown"/></svg>Results</button>
+  </div>
+</nav>
+
+<script>
+window.THEME = { votedIcon:'i-crown', qr:{ dark:'#0d0c0c', light:'#f6f4ef' } };
+</script>
+<script src="proto.js"></script>
+</body>
+</html>

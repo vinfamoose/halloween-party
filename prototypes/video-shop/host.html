@@ -4,35 +4,35 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#050506">
+<meta name="theme-color" content="#0c0a0a">
 <title>Host Photos — Costume Contest</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@500;700;900&family=Grenze:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=17">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=10">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="host">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
   <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></symbol>
-  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
 </svg>
 
 <div class="wrap">
-  <header class="masthead">
-    <svg class="crest" viewBox="6 -29 88 149" aria-hidden="true"><path fill="#e0ae2c" d="M50 3C73 3 90 18 90 41C90 51 87 58 84 63C87 65 88 70 86 74C84 78 80 80 78 82L75 95C73 104 66 112 59 116C53 118.5 47 118.5 41 116C34 112 27 104 25 95L22 82C20 80 16 78 14 74C12 70 13 65 16 63C13 58 10 51 10 41C10 18 27 3 50 3Z"/><path fill="#b98a1a" d="M90 41C90 50 88 57 84 63C82.5 58 83 50 85 44C86.5 39 89 37 90 41Z"/><path fill="#b98a1a" d="M10 41C10 50 12 57 16 63C17.5 58 17 50 15 44C13.5 39 11 37 10 41Z"/><path fill="#b98a1a" d="M78 82L75 95C74 101 71 106 67 110C69 103 69 95 67 88C70 85 74 83 78 82Z"/><path fill="#b98a1a" d="M22 82L25 95C26 101 29 106 33 110C31 103 31 95 33 88C30 85 26 83 22 82Z"/><path fill="#b98a1a" d="M38 34C44 38 56 38 62 34C60 42 56 48 54 58L46 58C44 48 40 42 38 34Z"/><path fill="#b98a1a" d="M38 108C45 111.5 55 111.5 62 108C60 114 55 117.5 50 117.5C45 117.5 40 114 38 108Z"/><path fill="#7d5c0c" d="M54 49C61 43 72 40.5 80 41.5C86 46 85.5 55 82.5 60C79 66 72 68 66 67.5C59 67 54 62 53 55.5C52.6 53 53 51 54 49Z"/><path fill="#7d5c0c" d="M46 49C39 43 28 40.5 20 41.5C14 46 14.5 55 17.5 60C21 66 28 68 34 67.5C41 67 46 62 47 55.5C47.4 53 47 51 46 49Z"/><path fill="#7d5c0c" d="M50 58C46 63 41 71 41 76C41 80 45 82 48 80C49 79 49.6 78 50 77C50.4 78 51 79 52 80C55 82 59 80 59 76C59 71 54 63 50 58Z"/><path fill="#7d5c0c" d="M28 86C40 82 60 82 72 86L70 99C60 105 40 105 30 99Z"/><path fill="#140e03" d="M56 50C62 45 72 43 79 44C83 47 82.5 54 80 58C77 63 71 65 66 64.5C60 64 56 60 55.3 55C55 53 55.3 51.5 56 50Z"/><path fill="#140e03" d="M44 50C38 45 28 43 21 44C17 47 17.5 54 20 58C23 63 29 65 34 64.5C40 64 44 60 44.7 55C45 53 44.7 51.5 44 50Z"/><path fill="#140e03" d="M50 61C47 65 43.5 72 43.5 76C43.5 78.6 46 79.4 47.8 78C48.8 77.2 49.5 76 50 74.6C50.5 76 51.2 77.2 52.2 78C54 79.4 56.5 78.6 56.5 76C56.5 72 53 65 50 61Z"/><path fill="#140e03" d="M29 91C40 95.5 60 95.5 71 91L70.5 93.5C60 98 40 98 29.5 93.5Z"/><path fill="#e0ae2c" d="M30.5 87.725C30.5 86.125 34.5 86.125 34.5 87.725L34.3 93.82499999999999C34.3 95.12499999999999 30.7 95.12499999999999 30.7 93.82499999999999Z"/><path fill="#e0ae2c" d="M35.5 87.10025C35.5 85.50025000000001 40 85.50025000000001 40 87.10025L39.8 93.20025C39.8 94.50025 35.7 94.50025 35.7 93.20025Z"/><path fill="#e0ae2c" d="M41 86.696C41 85.096 45 85.096 45 86.696L44.8 92.79599999999999C44.8 94.09599999999999 41.2 94.09599999999999 41.2 92.79599999999999Z"/><path fill="#e0ae2c" d="M46 86.52025C46 84.92025000000001 49.5 84.92025000000001 49.5 86.52025L49.3 92.62025C49.3 93.92025 46.2 93.92025 46.2 92.62025Z"/><path fill="#e0ae2c" d="M50.5 86.52025C50.5 84.92025000000001 54 84.92025000000001 54 86.52025L53.8 92.62025C53.8 93.92025 50.7 93.92025 50.7 92.62025Z"/><path fill="#e0ae2c" d="M55 86.696C55 85.096 59 85.096 59 86.696L58.8 92.79599999999999C58.8 94.09599999999999 55.2 94.09599999999999 55.2 92.79599999999999Z"/><path fill="#e0ae2c" d="M60 87.10025C60 85.50025000000001 64.5 85.50025000000001 64.5 87.10025L64.3 93.20025C64.3 94.50025 60.2 94.50025 60.2 93.20025Z"/><path fill="#e0ae2c" d="M65.5 87.725C65.5 86.125 69.5 86.125 69.5 87.725L69.3 93.82499999999999C69.3 95.12499999999999 65.7 95.12499999999999 65.7 93.82499999999999Z"/><path fill="#e0ae2c" d="M33.5 97.16146875000001C33.5 95.56146875000002 37 95.56146875000002 37 97.16146875000001L36.8 102.36146875C36.8 103.66146875 33.7 103.66146875 33.7 102.36146875Z"/><path fill="#e0ae2c" d="M38 96.76771875C38 95.16771875 41.5 95.16771875 41.5 96.76771875L41.3 101.96771874999999C41.3 103.26771874999999 38.2 103.26771874999999 38.2 101.96771874999999Z"/><path fill="#e0ae2c" d="M42.5 96.52183500000001C42.5 94.92183500000002 45.7 94.92183500000002 45.7 96.52183500000001L45.5 101.721835C45.5 103.021835 42.7 103.021835 42.7 101.721835Z"/><path fill="#e0ae2c" d="M46.7 96.41263500000001C46.7 94.81263500000001 49.5 94.81263500000001 49.5 96.41263500000001L49.3 101.612635C49.3 102.912635 46.900000000000006 102.912635 46.900000000000006 101.612635Z"/><path fill="#e0ae2c" d="M50.5 96.41263500000001C50.5 94.81263500000001 53.3 94.81263500000001 53.3 96.41263500000001L53.099999999999994 101.612635C53.099999999999994 102.912635 50.7 102.912635 50.7 101.612635Z"/><path fill="#e0ae2c" d="M54.3 96.52183500000001C54.3 94.92183500000002 57.5 94.92183500000002 57.5 96.52183500000001L57.3 101.721835C57.3 103.021835 54.5 103.021835 54.5 101.721835Z"/><path fill="#e0ae2c" d="M58.5 96.76771875C58.5 95.16771875 62 95.16771875 62 96.76771875L61.8 101.96771874999999C61.8 103.26771874999999 58.7 103.26771874999999 58.7 101.96771874999999Z"/><path fill="#e0ae2c" d="M63 97.16146875000001C63 95.56146875000002 66.5 95.56146875000002 66.5 97.16146875000001L66.3 102.36146875C66.3 103.66146875 63.2 103.66146875 63.2 102.36146875Z"/><path fill="#f8dc7a" d="M26 20C32 11 44 7 55 8C44 10 34 17 29 30C26 28 25 23 26 20Z"/><path fill="#f8dc7a" d="M57 43C63 39.5 72 38 80 38.6C73 39.5 64 41.5 58 45Z"/><path fill="#f8dc7a" d="M43 43C37 39.5 28 38 20 38.6C27 39.5 36 41.5 42 45Z"/><path fill="#f8dc7a" d="M15 68C19 65 26 66 30 70C25 68.5 20 68.5 15.5 70.5Z"/><path fill="#f8dc7a" d="M70 70C74 66 81 65 85 68C80 68.5 75 69.5 71 71.5Z"/><path fill="none" stroke="#b98a1a" stroke-width="1" stroke-linecap="round" d="M50 4C49 10 51.5 15 49.5 21C48.5 25 50.8 28 50 33"/><path fill="#7d5c0c" d="M19 20C31 14 69 14 81 20C69 17.5 31 17.5 19 23Z"/><path fill="#f8dc7a" d="M21 17L14 -13L33 3L50 -22L67 3L86 -13L79 17C68 11.5 32 11.5 21 17Z"/><path fill="#e0ae2c" d="M50 -22L67 3L86 -13L79 17C74 14.3 66 12.6 58 12L50 -22Z"/><path fill="#b98a1a" d="M21 17C32 11.5 68 11.5 79 17L80.6 9.5C68 4 32 4 19.4 9.5Z"/><path fill="#f8dc7a" d="M19.9 11.5C32 6 68 6 80.1 11.5L80.6 9.5C68 4 32 4 19.4 9.5Z"/><path fill="#e0233f" d="M50 5.2L54.2 9.6L50 14L45.8 9.6Z"/><path fill="#140e03" d="M31 7.6L34.4 11.2L31 14.8L27.6 11.2Z"/><path fill="#140e03" d="M69 7.6L72.4 11.2L69 14.8L65.6 11.2Z"/><circle cx="14" cy="-14" r="3.6" fill="#f8dc7a"/><circle cx="13" cy="-15" r="1.2" fill="#fff8dc"/><circle cx="50" cy="-23.5" r="3.6" fill="#f8dc7a"/><circle cx="49" cy="-24.5" r="1.2" fill="#fff8dc"/><circle cx="86" cy="-14" r="3.6" fill="#f8dc7a"/><circle cx="85" cy="-15" r="1.2" fill="#fff8dc"/></svg>
-    <h1><span>Host</span> <span>Photos</span></h1>
+  <header class="sign">
+    <div class="osd"><span>HOST</span></div>
+    <h1>Host <span>Photos</span></h1>
+    <p>Photograph every guest and every group for the voting page</p>
   </header>
 
   <main>
-    <div class="cats" role="tablist" aria-label="Host sections">
-      <button type="button" class="cat" role="tab" id="tStudio" aria-selected="true" aria-controls="studio"><span class="cat-name">Photos &amp; guests</span></button>
-      <button type="button" class="cat" role="tab" id="tAdmin" aria-selected="false" aria-controls="admin"><span class="cat-name">Admin</span></button>
+    <div class="dividers" role="tablist" aria-label="Host sections">
+      <button type="button" class="divider" role="tab" id="tStudio" aria-selected="true" aria-controls="studio"><span>Photos &amp; guests</span></button>
+      <button type="button" class="divider" role="tab" id="tAdmin" aria-selected="false" aria-controls="admin"><span>Admin</span></button>
     </div>
     <section id="studio">
-      <div class="ballot"><span>Photographed</span><span id="progress"></span></div>
+      <div class="ballot"><span>PHOTOGRAPHED</span><span id="progress"></span></div>
       <button type="button" class="btn ghost" id="addToggle" aria-expanded="false">Add a guest</button>
       <form class="slip addform" id="addForm" novalidate hidden>
         <h2 class="title">Add guest</h2>
@@ -48,14 +48,14 @@
         <button type="submit" class="btn" id="aBtn">Add guest</button>
         <div class="msg" id="aMsg" role="alert"></div>
       </form>
-      <div class="cats" role="tablist" aria-label="Filter">
-        <button type="button" class="cat" role="tab" id="fNeeds" aria-selected="true"><span class="cat-name">Needs photo</span></button>
-        <button type="button" class="cat" role="tab" id="fAll" aria-selected="false"><span class="cat-name">Everyone</span></button>
+      <div class="dividers" role="tablist" aria-label="Filter">
+        <button type="button" class="divider" role="tab" id="fNeeds" aria-selected="true"><span>Needs photo</span></button>
+        <button type="button" class="divider" role="tab" id="fAll" aria-selected="false"><span>Everyone</span></button>
       </div>
-      <h2 class="title left" id="groupsTitle">Groups</h2>
-      <div class="roll" id="groupList"></div>
-      <h2 class="title left">Individuals</h2>
-      <div class="roll" id="soloList"></div>
+      <h2 class="title" id="groupsTitle">Groups</h2>
+      <div class="shelf" id="groupList"></div>
+      <h2 class="title spaced">Individuals</h2>
+      <div class="shelf" id="soloList"></div>
     </section>
 
     <section id="admin" hidden>
@@ -69,14 +69,14 @@
         <div class="msg" id="loginMsg" role="alert"></div>
       </form>
       <div id="adminBody" hidden>
-        <div class="ballot"><span>Admin</span><span id="adminWho"></span></div>
+        <div class="ballot"><span>ADMIN</span><span id="adminWho"></span></div>
         <p class="hint" id="notAdmin" hidden>This account isn't an admin. Add it to the <code>admins</code> table in Supabase.</p>
         <div id="adminTools" hidden>
           <div class="admin-block">
             <h2 class="title">Party controls</h2>
             <div class="admin-switches">
-              <button type="button" class="switch" role="switch" id="swVoting" aria-checked="false">Voting open<span class="knob" aria-hidden="true"></span></button>
-              <button type="button" class="switch" role="switch" id="swResults" aria-checked="false">Results visible<span class="knob" aria-hidden="true"></span></button>
+              <button type="button" class="devtoggle" role="switch" id="swVoting" aria-checked="false">Voting open<span class="knob" aria-hidden="true"></span></button>
+              <button type="button" class="devtoggle" role="switch" id="swResults" aria-checked="false">Results visible<span class="knob" aria-hidden="true"></span></button>
             </div>
             <p class="hint">Closed voting is enforced by the database. Hidden results are only hidden on the results and big-screen pages; the counts are still public in the database.</p>
           </div>
@@ -94,7 +94,7 @@
               <button type="button" class="btn danger" id="clearVotes">Clear all votes</button>
             </div>
             <div>
-              <p class="hint">Makes every guest phone forget its check-in and votes, as if the cookies were cleared. Open pages reset straight away; others next time they're opened. Nothing online is deleted.</p>
+              <p class="hint">Makes every guest phone forget its check-in, votes and Dev Test Mode, as if the cookies were cleared. Open pages reset straight away; others next time they're opened. Nothing online is deleted.</p>
               <button type="button" class="btn danger" id="resetDevices">Reset all guest devices</button>
             </div>
             <div>
@@ -112,7 +112,7 @@
 <div class="cam" id="cam" role="dialog" aria-modal="true" aria-label="Take photo" hidden>
   <video id="camVideo" playsinline muted autoplay></video>
   <canvas id="camShot" aria-label="Photo preview" hidden></canvas>
-  <div class="cam-top"><span id="camLabel"></span><button type="button" class="cam-x" id="camClose" aria-label="Close camera"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+  <div class="cam-top"><span id="camLabel"></span><button type="button" class="cam-x" id="camClose" aria-label="Close camera">✕</button></div>
   <div class="cam-bar" id="camLive">
     <button type="button" class="cam-side" id="camFlip">Flip</button>
     <button type="button" class="cam-shutter" id="camShutter" aria-label="Take photo"></button>
@@ -125,9 +125,9 @@
 </div>
 <input type="file" id="fileInput" accept="image/*" capture="environment" hidden>
 <input type="file" id="libInput" accept="image/*" hidden>
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" style="bottom:20px"></div>
 
-<script src="shared.js?v=9"></script>
+<script src="shared.js?v=7"></script>
 <script>
 const $ = id => document.getElementById(id);
 const ICON_CAM = '<svg class="icon" aria-hidden="true"><use href="#i-camera"/></svg>';
@@ -174,7 +174,7 @@ function render(){
   const solos = state.entries.map(e => ({ key: 'e_' + e.id, label: e.name, sub: e.costume, tag: e.team_id ? teamOf[e.team_id] : null }));
   const all = [...groups, ...solos];
   const done = all.filter(x => photos[x.key]).length;
-  $('progress').innerHTML = `<b>${done}</b> of ${all.length}`;
+  $('progress').innerHTML = `<b>${done}</b> OF ${all.length}`;
   fill($('groupList'), groups, 'No groups have checked in yet.');
   fill($('soloList'), solos, 'Nobody has checked in yet.');
   $('groupsTitle').hidden = false;
@@ -203,7 +203,7 @@ function fill(listEl, items, emptyText){
     wrap.className = 'hostrow';
     const row = document.createElement('button');
     row.type = 'button';
-    row.className = 'guest' + (has ? ' done' : '');
+    row.className = `tape t${spineTone(x.key)} hasphoto` + (has ? ' voted' : '');
     row.disabled = busy.has(x.key);
     const thumb = has ? `<img class="photo" src="${escapeHtml(photos[x.key])}" alt="">` : `<span class="photo empty-photo">${ICON_CAM}</span>`;
     const state_ = busy.has(x.key) ? 'Saving…' : has ? `<span class="stamp">${ICON_OK}Retake</span>` : 'Photo';
@@ -386,6 +386,7 @@ async function loadVoteLog(){
       const voter = entry[v.voter_entry_id];
       const target = v.entry_id ? (entry[v.entry_id] || {}).name : (team[v.team_id] || {}).display_name;
       const why = [];
+      if(v.device_id.startsWith('dev_')) why.push('Dev Test Mode');
       if(v.voter_entry_id && perVoter[v.voter_entry_id] > 1) why.push(`Voted ${perVoter[v.voter_entry_id]}× here, from different phones`);
       if(voter && (v.entry_id === voter.id || (v.team_id && v.team_id === voter.team_id))) why.push('Voted for themselves');
       if(why.length) flagged++;
@@ -393,8 +394,8 @@ async function loadVoteLog(){
     }).join('');
     return `<section><h3>${escapeHtml(cat.name)}</h3><ol>${items}</ol></section>`;
   }).join('');
-  $('logCount').innerHTML = `<b>${votes.length}</b> votes`;
-  $('logFlags').innerHTML = flagged ? `<b>${flagged}</b> flagged` : '';
+  $('logCount').innerHTML = `<b>${votes.length}</b> VOTES`;
+  $('logFlags').innerHTML = flagged ? `<b>${flagged}</b> FLAGGED` : '';
   $('voteLog').innerHTML = html || '<div class="empty">No votes yet.</div>';
 }
 $('logRefresh').addEventListener('click', loadVoteLog);

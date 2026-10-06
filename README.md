@@ -41,7 +41,7 @@ no code changes needed unless you introduce a new `kind` beyond
 - `party.html` — guests on phones: Check In and Vote.
 - `results.html` — live leaderboard, phone-sized on every screen (the Results tab links here).
 - `display.html` — the big projector screen. Open it on the TV/laptop (`https://…/display.html`).
-  While results are hidden it shows a QR code to check in & vote, how many have checked in and voted, and
+  While results are hidden it shows how many have checked in and voted, and
   whether voting is open; at the reveal it becomes the leaderboard.
 - `host.html` — host page: photos, add/regroup/delete guests (no login; keep the link private).
 - `style.css` / `shared.js` — shared styles and Supabase/data logic. Both pages
@@ -63,16 +63,16 @@ The host page's **Admin** tab needs a sign-in; the Photos & guests tab stays ope
 What's in it (every action is also checked in the database, so only accounts in `admins` can run them):
 - **Voting open** switch: when off, guests see "Voting is closed" and the database rejects new or changed votes.
 - **Results visible** switch: when off, the phone results page shows "Results will be revealed soon…" and the
-  big screen shows the check-in QR code and live counts instead of the standings.
+  big screen shows live counts instead of the standings.
   This only hides them on those pages; vote counts are still readable from the database with the public key.
   **30 seconds after you switch it back on**, both results pages are taken over by a full-screen
   **Best Host** award. Name and title are at the top of `results.js` (`BEST_HOST`); put the photo in the repo
   root as `best-host.jpg` (portrait works best). Without the photo the award shows a crown instead. Guests can
   close it on their phones; the big screen keeps it up. Switching results off again takes it down.
 - **Vote log**: every vote by category. Flags a guest who voted more than once in a category from different
-  phones, votes cast in Dev Test Mode, and anyone who voted for themselves or their own group.
+  phones, and anyone who voted for themselves or their own group.
 - **Clear all votes**: deletes every vote but keeps guests and photos; phones forget their votes so everyone can vote again.
-- **Reset all guest devices**: every guest phone forgets its check-in, votes and Dev Test Mode, as if its
+- **Reset all guest devices**: every guest phone forgets its check-in and votes, as if its
   cookies were cleared. Open pages reset instantly; closed ones the next time they're opened. Nothing online is deleted.
 - **Start fresh**: after a test run, deletes every guest, group, vote and photo and resets every guest device.
   Categories and the two switches are left as they are.
@@ -125,3 +125,7 @@ One-off setup:
 Until the secrets are set, the migrations stage fails with a message saying so, and the site isn't published
 by this workflow. On the first run, check the "Show which migrations production already has" step: every
 migration already applied should appear in the Remote column.
+
+## Themes
+
+The current look is the 2026 "Gothic Royalty" theme (court cards dressed to match the host's throne). The previous video-rental theme is kept as a complete working snapshot in `prototypes/video-shop/` (pages, `style.css`, scripts). The other `prototypes/*.html` files are theme sketches that run on sample data only.

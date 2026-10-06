@@ -9,7 +9,7 @@ test('check-in page shows the form to a new guest', async ({ openPage }) => {
 
 test('a checked-in guest lands on the ballot', async ({ openPage }) => {
   const page = await openPage('/party.html', { storage: require('./helpers').checkedIn });
-  await expect(page.getByText('YOUR BALLOT')).toBeVisible();
+  await expect(page.getByText('Your ballot')).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Individual Male' })).toBeVisible();
 });
 

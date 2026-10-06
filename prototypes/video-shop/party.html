@@ -3,40 +3,39 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#050506">
+<meta name="theme-color" content="#0c0a0a">
 <title>Costume Contest</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@500;700;900&family=Grenze:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=17">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=10">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="s-spade" viewBox="0 0 24 24"><path d="M12 2C8 7 3 10 3 14.5a4.5 4.5 0 007.6 3.2C10.3 19.6 9.6 21 8 22h8c-1.6-1-2.3-2.4-2.6-4.3A4.5 4.5 0 0021 14.5C21 10 16 7 12 2z"/></symbol>
-  <symbol id="s-heart" viewBox="0 0 24 24"><path d="M12 21.5C5 15.6 2 12 2 8.2A5 5 0 0112 6a5 5 0 0110 2.2c0 3.8-3 7.4-10 13.3z"/></symbol>
-  <symbol id="s-club" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4.4"/><circle cx="6.6" cy="13.8" r="4.4"/><circle cx="17.4" cy="13.8" r="4.4"/><path d="M12 10c0 6-.8 9.5-3 12h6c-2.2-2.5-3-6-3-12z"/></symbol>
-  <symbol id="s-diamond" viewBox="0 0 24 24"><path d="M12 1.5l8 10.5-8 10.5L4 12z"/></symbol>
-  <symbol id="i-slip" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></symbol>
-  <symbol id="i-cards" viewBox="0 0 24 24"><rect x="3" y="6" width="11" height="15" rx="1.5" transform="rotate(-8 8.5 13.5)"/><rect x="10" y="4" width="11" height="15" rx="1.5" transform="rotate(8 15.5 11.5)"/></symbol>
-  <symbol id="i-crown" viewBox="0 0 24 24"><path d="M4 18h16M5 18L3.5 8l5 4L12 5l3.5 7 5-4L19 18"/></symbol>
-  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-slip" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 8h8M8 12h8M8 16h4"/></symbol>
+  <symbol id="i-tape" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1"/><circle cx="9" cy="12" r="2"/><circle cx="15" cy="12" r="2"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 01-8 0V4z"/><path d="M8 6H4v1a3 3 0 003 3M16 6h4v1a3 3 0 01-3 3M12 13v4M8 20h8M10 17h4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z" fill="currentColor" stroke="none"/></symbol>
 </svg>
 
+<div class="devbanner" id="devBanner" hidden>DEV TEST MODE — nothing is remembered, every vote counts as a new guest</div>
 <div class="wrap">
-  <header class="masthead">
-    <svg class="crest" viewBox="6 -29 88 149" aria-hidden="true"><path fill="#e0ae2c" d="M50 3C73 3 90 18 90 41C90 51 87 58 84 63C87 65 88 70 86 74C84 78 80 80 78 82L75 95C73 104 66 112 59 116C53 118.5 47 118.5 41 116C34 112 27 104 25 95L22 82C20 80 16 78 14 74C12 70 13 65 16 63C13 58 10 51 10 41C10 18 27 3 50 3Z"/><path fill="#b98a1a" d="M90 41C90 50 88 57 84 63C82.5 58 83 50 85 44C86.5 39 89 37 90 41Z"/><path fill="#b98a1a" d="M10 41C10 50 12 57 16 63C17.5 58 17 50 15 44C13.5 39 11 37 10 41Z"/><path fill="#b98a1a" d="M78 82L75 95C74 101 71 106 67 110C69 103 69 95 67 88C70 85 74 83 78 82Z"/><path fill="#b98a1a" d="M22 82L25 95C26 101 29 106 33 110C31 103 31 95 33 88C30 85 26 83 22 82Z"/><path fill="#b98a1a" d="M38 34C44 38 56 38 62 34C60 42 56 48 54 58L46 58C44 48 40 42 38 34Z"/><path fill="#b98a1a" d="M38 108C45 111.5 55 111.5 62 108C60 114 55 117.5 50 117.5C45 117.5 40 114 38 108Z"/><path fill="#7d5c0c" d="M54 49C61 43 72 40.5 80 41.5C86 46 85.5 55 82.5 60C79 66 72 68 66 67.5C59 67 54 62 53 55.5C52.6 53 53 51 54 49Z"/><path fill="#7d5c0c" d="M46 49C39 43 28 40.5 20 41.5C14 46 14.5 55 17.5 60C21 66 28 68 34 67.5C41 67 46 62 47 55.5C47.4 53 47 51 46 49Z"/><path fill="#7d5c0c" d="M50 58C46 63 41 71 41 76C41 80 45 82 48 80C49 79 49.6 78 50 77C50.4 78 51 79 52 80C55 82 59 80 59 76C59 71 54 63 50 58Z"/><path fill="#7d5c0c" d="M28 86C40 82 60 82 72 86L70 99C60 105 40 105 30 99Z"/><path fill="#140e03" d="M56 50C62 45 72 43 79 44C83 47 82.5 54 80 58C77 63 71 65 66 64.5C60 64 56 60 55.3 55C55 53 55.3 51.5 56 50Z"/><path fill="#140e03" d="M44 50C38 45 28 43 21 44C17 47 17.5 54 20 58C23 63 29 65 34 64.5C40 64 44 60 44.7 55C45 53 44.7 51.5 44 50Z"/><path fill="#140e03" d="M50 61C47 65 43.5 72 43.5 76C43.5 78.6 46 79.4 47.8 78C48.8 77.2 49.5 76 50 74.6C50.5 76 51.2 77.2 52.2 78C54 79.4 56.5 78.6 56.5 76C56.5 72 53 65 50 61Z"/><path fill="#140e03" d="M29 91C40 95.5 60 95.5 71 91L70.5 93.5C60 98 40 98 29.5 93.5Z"/><path fill="#e0ae2c" d="M30.5 87.725C30.5 86.125 34.5 86.125 34.5 87.725L34.3 93.82499999999999C34.3 95.12499999999999 30.7 95.12499999999999 30.7 93.82499999999999Z"/><path fill="#e0ae2c" d="M35.5 87.10025C35.5 85.50025000000001 40 85.50025000000001 40 87.10025L39.8 93.20025C39.8 94.50025 35.7 94.50025 35.7 93.20025Z"/><path fill="#e0ae2c" d="M41 86.696C41 85.096 45 85.096 45 86.696L44.8 92.79599999999999C44.8 94.09599999999999 41.2 94.09599999999999 41.2 92.79599999999999Z"/><path fill="#e0ae2c" d="M46 86.52025C46 84.92025000000001 49.5 84.92025000000001 49.5 86.52025L49.3 92.62025C49.3 93.92025 46.2 93.92025 46.2 92.62025Z"/><path fill="#e0ae2c" d="M50.5 86.52025C50.5 84.92025000000001 54 84.92025000000001 54 86.52025L53.8 92.62025C53.8 93.92025 50.7 93.92025 50.7 92.62025Z"/><path fill="#e0ae2c" d="M55 86.696C55 85.096 59 85.096 59 86.696L58.8 92.79599999999999C58.8 94.09599999999999 55.2 94.09599999999999 55.2 92.79599999999999Z"/><path fill="#e0ae2c" d="M60 87.10025C60 85.50025000000001 64.5 85.50025000000001 64.5 87.10025L64.3 93.20025C64.3 94.50025 60.2 94.50025 60.2 93.20025Z"/><path fill="#e0ae2c" d="M65.5 87.725C65.5 86.125 69.5 86.125 69.5 87.725L69.3 93.82499999999999C69.3 95.12499999999999 65.7 95.12499999999999 65.7 93.82499999999999Z"/><path fill="#e0ae2c" d="M33.5 97.16146875000001C33.5 95.56146875000002 37 95.56146875000002 37 97.16146875000001L36.8 102.36146875C36.8 103.66146875 33.7 103.66146875 33.7 102.36146875Z"/><path fill="#e0ae2c" d="M38 96.76771875C38 95.16771875 41.5 95.16771875 41.5 96.76771875L41.3 101.96771874999999C41.3 103.26771874999999 38.2 103.26771874999999 38.2 101.96771874999999Z"/><path fill="#e0ae2c" d="M42.5 96.52183500000001C42.5 94.92183500000002 45.7 94.92183500000002 45.7 96.52183500000001L45.5 101.721835C45.5 103.021835 42.7 103.021835 42.7 101.721835Z"/><path fill="#e0ae2c" d="M46.7 96.41263500000001C46.7 94.81263500000001 49.5 94.81263500000001 49.5 96.41263500000001L49.3 101.612635C49.3 102.912635 46.900000000000006 102.912635 46.900000000000006 101.612635Z"/><path fill="#e0ae2c" d="M50.5 96.41263500000001C50.5 94.81263500000001 53.3 94.81263500000001 53.3 96.41263500000001L53.099999999999994 101.612635C53.099999999999994 102.912635 50.7 102.912635 50.7 101.612635Z"/><path fill="#e0ae2c" d="M54.3 96.52183500000001C54.3 94.92183500000002 57.5 94.92183500000002 57.5 96.52183500000001L57.3 101.721835C57.3 103.021835 54.5 103.021835 54.5 101.721835Z"/><path fill="#e0ae2c" d="M58.5 96.76771875C58.5 95.16771875 62 95.16771875 62 96.76771875L61.8 101.96771874999999C61.8 103.26771874999999 58.7 103.26771874999999 58.7 101.96771874999999Z"/><path fill="#e0ae2c" d="M63 97.16146875000001C63 95.56146875000002 66.5 95.56146875000002 66.5 97.16146875000001L66.3 102.36146875C66.3 103.66146875 63.2 103.66146875 63.2 102.36146875Z"/><path fill="#f8dc7a" d="M26 20C32 11 44 7 55 8C44 10 34 17 29 30C26 28 25 23 26 20Z"/><path fill="#f8dc7a" d="M57 43C63 39.5 72 38 80 38.6C73 39.5 64 41.5 58 45Z"/><path fill="#f8dc7a" d="M43 43C37 39.5 28 38 20 38.6C27 39.5 36 41.5 42 45Z"/><path fill="#f8dc7a" d="M15 68C19 65 26 66 30 70C25 68.5 20 68.5 15.5 70.5Z"/><path fill="#f8dc7a" d="M70 70C74 66 81 65 85 68C80 68.5 75 69.5 71 71.5Z"/><path fill="none" stroke="#b98a1a" stroke-width="1" stroke-linecap="round" d="M50 4C49 10 51.5 15 49.5 21C48.5 25 50.8 28 50 33"/><path fill="#7d5c0c" d="M19 20C31 14 69 14 81 20C69 17.5 31 17.5 19 23Z"/><path fill="#f8dc7a" d="M21 17L14 -13L33 3L50 -22L67 3L86 -13L79 17C68 11.5 32 11.5 21 17Z"/><path fill="#e0ae2c" d="M50 -22L67 3L86 -13L79 17C74 14.3 66 12.6 58 12L50 -22Z"/><path fill="#b98a1a" d="M21 17C32 11.5 68 11.5 79 17L80.6 9.5C68 4 32 4 19.4 9.5Z"/><path fill="#f8dc7a" d="M19.9 11.5C32 6 68 6 80.1 11.5L80.6 9.5C68 4 32 4 19.4 9.5Z"/><path fill="#e0233f" d="M50 5.2L54.2 9.6L50 14L45.8 9.6Z"/><path fill="#140e03" d="M31 7.6L34.4 11.2L31 14.8L27.6 11.2Z"/><path fill="#140e03" d="M69 7.6L72.4 11.2L69 14.8L65.6 11.2Z"/><circle cx="14" cy="-14" r="3.6" fill="#f8dc7a"/><circle cx="13" cy="-15" r="1.2" fill="#fff8dc"/><circle cx="50" cy="-23.5" r="3.6" fill="#f8dc7a"/><circle cx="49" cy="-24.5" r="1.2" fill="#fff8dc"/><circle cx="86" cy="-14" r="3.6" fill="#f8dc7a"/><circle cx="85" cy="-15" r="1.2" fill="#fff8dc"/></svg>
-    <h1 class="long"><span>Cobby Street</span>
-      <span class="pips" aria-hidden="true"><svg class="pip"><use href="#s-spade"/></svg><svg class="pip red"><use href="#s-heart"/></svg><svg class="pip"><use href="#s-club"/></svg><svg class="pip red"><use href="#s-diamond"/></svg></span>
-      <span>Costume Contest</span></h1>
+  <header class="sign">
+    <div class="osd"><span class="play"><svg class="icon"><use href="#i-play"/></svg>PLAY</span><span id="clock" aria-hidden="true">00:00:00</span></div>
+    <h1>Costume <span>Contest</span></h1>
+    <p>Check in, then vote for the best looks</p>
   </header>
 
   <main>
     <section id="register-panel" class="panel">
       <div class="receipt" id="registeredCard" hidden>
-        <div class="stub">Checked in</div>
+        <div class="stub">CHECKED IN</div>
         <div class="who" id="registeredName"></div>
         <p class="as" id="registeredText"></p>
+        <div class="barcode" aria-hidden="true"></div>
+        <button type="button" class="btn ghost" id="newGuestBtn" hidden>Test: check in another guest</button>
       </div>
 
       <form class="slip" id="registerForm" novalidate>
@@ -51,28 +50,31 @@
           <option value="male">Male</option>
           <option value="female">Female</option>
         </select>
-        <label for="groupSelect">Duo / group costume name (optional)</label>
+        <div class="hint">Used to place solo entries in Individual Male or Individual Female.</div>
+        <label for="groupInput">Duo / group costume name (optional)</label>
         <select id="groupSelect"><option value="">None — I'm solo</option></select>
-        <input type="text" id="groupInput" placeholder="New group name, e.g. Ghostbusters Crew" maxlength="60" aria-label="New group name" hidden>
+        <input type="text" id="groupInput" placeholder="New group name, e.g. Ghostbusters Crew" maxlength="60" hidden>
         <div class="hint">Pick your group if someone in it has already checked in. Otherwise choose &lt;Add New&gt; and name it — everyone in your couple or group picks that same group.</div>
         <button type="submit" class="btn" id="registerBtn">Check In</button>
         <div class="msg" id="registerMsg" role="alert"></div>
       </form>
-
     </section>
 
     <section id="vote-panel" class="panel" hidden>
-      <div class="ballot"><span>Your ballot</span><span id="ballotCount"></span></div>
+      <div class="ballot"><span>YOUR BALLOT</span><span id="ballotCount"></span></div>
       <div class="notice" id="votingClosed" role="status" hidden>Voting is closed</div>
-      <div class="cats" id="categoryTabs" role="tablist" aria-label="Categories"></div>
-      <div class="deck" id="voteList"></div>
+      <div class="dividers" id="categoryTabs" role="tablist" aria-label="Categories"></div>
+      <div class="shelf" id="voteList"></div>
     </section>
   </main>
+  <footer class="devfoot">
+    <button type="button" class="devtoggle" id="devToggle" role="switch" aria-checked="false"><span class="knob" aria-hidden="true"></span>Dev Test Mode</button>
+  </footer>
 </div>
 
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Costume photo" hidden>
-  <button type="button" class="lb-x" id="lbClose" aria-label="Close photo"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
-  <div class="lb-frame" id="lbFrame"></div>
+  <button type="button" class="lb-x" id="lbClose" aria-label="Close photo">✕</button>
+  <img id="lbImg" alt="">
   <div class="lb-bar">
     <div class="lb-text"><div class="lb-name" id="lbName"></div><div class="lb-sub" id="lbSub"></div></div>
     <button type="button" class="btn" id="lbVote"></button>
@@ -83,13 +85,20 @@
 <nav class="nav" aria-label="Sections">
   <div class="nav-inner">
     <button type="button" data-tab="register"><svg class="icon"><use href="#i-slip"/></svg>Check In</button>
-    <button type="button" data-tab="vote"><svg class="icon"><use href="#i-cards"/></svg>Vote</button>
-    <a href="results.html"><svg class="icon"><use href="#i-crown"/></svg>Results</a>
+    <button type="button" data-tab="vote"><svg class="icon"><use href="#i-tape"/></svg>Vote</button>
+    <a href="results.html"><svg class="icon"><use href="#i-trophy"/></svg>Results</a>
   </div>
 </nav>
 
-<script src="shared.js?v=9"></script>
+<script src="shared.js?v=7"></script>
 <script>
+// ---------- VCR clock ----------
+(function(){
+  const el = document.getElementById('clock'); const t0 = Date.now();
+  const p = n => String(n).padStart(2,'0');
+  setInterval(() => { const s = Math.floor((Date.now()-t0)/1000); el.textContent = `${p(Math.floor(s/3600))}:${p(Math.floor(s/60)%60)}:${p(s%60)}`; }, 1000);
+})();
+
 // ---------- Toast ----------
 let toastTimer;
 function toast(msg, isErr){
@@ -182,16 +191,36 @@ function showRegistrationState(){
     document.getElementById('registeredName').textContent = r.name;
     document.getElementById('registeredText').textContent = `${r.costume}. Good luck!`;
   }
+  document.getElementById('newGuestBtn').hidden = !(r && isDevMode());
 }
 showRegistrationState();
 loadGroups();
+
+// ---------- Dev Test Mode toggle ----------
+function syncDevUi(){
+  const on = isDevMode();
+  document.getElementById('devBanner').hidden = !on;
+  const t = document.getElementById('devToggle');
+  t.setAttribute('aria-checked', on ? 'true' : 'false');
+  t.classList.toggle('on', on);
+}
+document.getElementById('devToggle').addEventListener('click', () => {
+  setDevMode(!isDevMode());
+  syncDevUi(); showRegistrationState();
+  if(activeTab === 'vote') loadCategoriesAndVotePanel();
+  toast(isDevMode() ? 'Dev Test Mode on: nothing is saved to this device.' : 'Dev Test Mode off.');
+});
+document.getElementById('newGuestBtn').addEventListener('click', () => {
+  Object.keys(memStore).forEach(k => delete memStore[k]);
+  showRegistrationState(); showTab('register');
+});
+syncDevUi();
 
 // ---------- Vote panel ----------
 let currentState = null;
 let votingOpen = true; // set by the admin; see handleAppState
 let currentCategoryId = null;
-let justCrowned = null; // contestant id whose card should turn over on the next render
-const CROWN = '<svg class="icon" aria-hidden="true"><use href="#i-crown"/></svg>';
+const CHECK = '<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>';
 
 async function loadCategoriesAndVotePanel(){
   currentState = await loadAll();
@@ -207,16 +236,16 @@ function renderCategoryTabs(){
   const tabsEl = document.getElementById('categoryTabs');
   const local = getLocalVotes();
   tabsEl.innerHTML = '';
-  currentState.categories.forEach((cat, i) => {
+  currentState.categories.forEach(cat => {
     const el = document.createElement('button');
-    el.type = 'button'; el.className = 'cat'; el.setAttribute('role','tab');
+    el.type = 'button'; el.className = 'divider'; el.setAttribute('role','tab');
     el.setAttribute('aria-selected', cat.id === currentCategoryId ? 'true' : 'false');
-    el.innerHTML = `${suitPip(i)}<span class="cat-name">${escapeHtml(cat.name)}</span>${local[cat.id] ? `<span class="cat-done">${CROWN}<span class="sr">crowned</span></span>` : ''}`;
+    el.innerHTML = `<span>${escapeHtml(cat.name)}</span>${local[cat.id] ? CHECK : ''}`;
     el.addEventListener('click', () => { currentCategoryId = cat.id; renderCategoryTabs(); renderVoteList(cat); });
     tabsEl.appendChild(el);
   });
   const done = currentState.categories.filter(c => local[c.id]).length;
-  document.getElementById('ballotCount').innerHTML = `<b>${done}</b> of ${currentState.categories.length} crowned`;
+  document.getElementById('ballotCount').innerHTML = `<b>${done}</b> OF ${currentState.categories.length} VOTED`;
 }
 
 async function getMyVote(categoryId){
@@ -227,7 +256,7 @@ async function getMyVote(categoryId){
 
 async function castVote(c, category){
   if(!votingOpen){ toast('Voting is closed.', true); return false; }
-  if(isOwnContestant(c)){ toast("You can't vote for yourself!", true); return false; }
+  if(isOwnContestant(c) && !isDevMode()){ toast("You can't vote for yourself!", true); return false; }
   const reg = getRegistration();
   if(!reg){ toast('Check in first so we know who is voting.', true); return false; }
   try{
@@ -235,9 +264,8 @@ async function castVote(c, category){
     const { error } = await sb.from('votes').upsert(payload, { onConflict: 'device_id,category_id' });
     if(error) throw error;
     setLocalVote(category.id, c.id);
-    toast(`You crowned ${c.label} in ${category.name}!`);
+    toast(`Voted for ${c.label} in ${category.name}!`);
     currentState = await loadAll();
-    justCrowned = c.id;
     renderCategoryTabs();
     renderVoteList(category);
     return true;
@@ -249,7 +277,6 @@ async function castVote(c, category){
 
 async function renderVoteList(category){
   const listEl = document.getElementById('voteList');
-  const catIndex = currentState.categories.findIndex(c => c.id === category.id);
   const contestants = withCounts(buildContestants(category.kind, currentState), category.id, currentState.votes);
   if(contestants.length === 0){
     listEl.innerHTML = `<div class="empty">No entries eligible for ${escapeHtml(category.name)} yet.</div>`;
@@ -261,30 +288,26 @@ async function renderVoteList(category){
   contestants.forEach(c => {
     const own = isOwnContestant(c);
     const voted = myVote === c.id;
-    const initial = escapeHtml(c.label.trim().charAt(0).toUpperCase());
     const row = document.createElement('div');
-    row.className = 'entry' + (voted ? ' voted' : '') + (own ? ' own' : '') + (c.photo ? ' hasphoto' : '') + (voted && justCrowned === c.id ? ' just' : '');
+    row.className = `tape votable t${spineTone(c.id)}` + (voted ? ' voted' : '') + (own ? ' own' : '') + (c.photo ? ' hasphoto' : '');
+    const stateHtml = voted ? `<span class="stamp">${CHECK}Voted</span>` : own ? 'You' : votingOpen ? 'Vote' : 'Closed';
     const info = document.createElement('button');
-    info.type = 'button'; info.className = 'entry-info';
+    info.type = 'button'; info.className = 'tape-info';
     info.setAttribute('aria-label', c.photo ? `See ${c.label}'s photo` : `Vote for ${c.label}`);
-    info.innerHTML = `<span class="portrait">${c.photo ? `<img src="${escapeHtml(c.photo)}" alt="" loading="lazy">` : `<span class="mono" aria-hidden="true">${initial}</span>`}</span>`
-      + `<span class="body"><span class="name">${escapeHtml(c.label)}</span>${c.tag ? `<span class="tag">${c.tag}</span>` : ''}<span class="costume">${escapeHtml(c.sub)}</span></span>`;
+    info.innerHTML = (c.photo ? `<img class="photo" src="${escapeHtml(c.photo)}" alt="" loading="lazy">` : '') + `<span class="body"><span class="name">${escapeHtml(c.label)}${c.tag ? `<span class="tag">${c.tag}</span>` : ''}</span><span class="costume">${escapeHtml(c.sub)}</span></span>`;
     const vote = document.createElement('button');
-    vote.type = 'button'; vote.className = 'entry-vote';
+    vote.type = 'button'; vote.className = 'tape-vote';
     vote.setAttribute('aria-pressed', voted ? 'true' : 'false');
     vote.setAttribute('aria-label', `Vote for ${c.label}`);
-    vote.innerHTML = voted ? `<span class="stamp">${CROWN}Crowned</span>` : own ? 'You' : votingOpen ? 'Vote' : 'Closed';
+    vote.innerHTML = stateHtml;
     vote.disabled = !votingOpen && !voted;
-    const doVote = async () => { if(voted) return; await castVote(c, category); };
+    const doVote = async () => { if(voted && !isDevMode()) return; await castVote(c, category); };
     vote.addEventListener('click', doVote);
     // With a photo, the name/photo opens the big view; without one there's nothing to show, so it votes.
     info.addEventListener('click', () => c.photo ? openLightbox(c, category, { own, voted }) : doVote());
-    const idx = `<b>${initial}</b>${suitPip(catIndex)}`;
     row.append(info, vote);
-    row.insertAdjacentHTML('beforeend', `<span class="idx tl" aria-hidden="true">${idx}</span><span class="idx br" aria-hidden="true">${idx}</span>`);
     listEl.appendChild(row);
   });
-  justCrowned = null;
 }
 
 // ---------- Photo view ----------
@@ -295,14 +318,13 @@ function closeLightbox(){
 }
 function openLightbox(c, category, { own, voted }){
   lightboxReturn = document.activeElement;
-  const img = new Image();
-  img.src = c.photo; img.alt = `${c.label} — ${c.sub}`;
-  document.getElementById('lbFrame').replaceChildren(img);
+  document.getElementById('lbImg').src = c.photo;
+  document.getElementById('lbImg').alt = `${c.label} — ${c.sub}`;
   document.getElementById('lbName').textContent = c.label;
   document.getElementById('lbSub').textContent = c.sub;
   const btn = document.getElementById('lbVote');
-  btn.textContent = voted ? 'Crowned' : own ? 'This is you' : !votingOpen ? 'Voting is closed' : `Vote in ${category.name}`;
-  btn.disabled = voted || own || !votingOpen;
+  btn.textContent = voted ? 'Voted' : own ? 'This is you' : !votingOpen ? 'Voting is closed' : `Vote in ${category.name}`;
+  btn.disabled = (voted && !isDevMode()) || (own && !isDevMode()) || !votingOpen;
   btn.onclick = async () => { if(await castVote(c, category)) closeLightbox(); };
   document.getElementById('lightbox').hidden = false;
   document.getElementById('lbClose').focus();
@@ -337,7 +359,7 @@ async function handleAppState(app){
   votingOpen = app.voting_open;
   document.getElementById('votingClosed').hidden = votingOpen;
   if(cleared === 'device'){
-    showRegistrationState(); showTab('register');
+    syncDevUi(); showRegistrationState(); showTab('register');
     toast('This device has been reset.');
     return;
   }
