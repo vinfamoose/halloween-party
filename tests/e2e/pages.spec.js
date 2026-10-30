@@ -1,10 +1,15 @@
 // Every page loads without a JavaScript error (the fixture fails the test on any page error).
-const { test, expect } = require('./helpers');
+const { test, expect, partyData, IDS } = require('./helpers');
 
 test('check-in page shows the form to a new guest', async ({ openPage }) => {
   const page = await openPage('/party.html');
   await expect(page.getByRole('heading', { name: 'Check in' })).toBeVisible();
   await expect(page.locator('#registeredCard')).toBeHidden();
+});
+
+test('results page waits for the reveal', async ({ openPage }) => {
+  const page = await openPage('/results.html');
+  await expect(page.locator('.empty.reveal')).toContainText('revealed soon');
 });
 
 test('a checked-in guest lands on the ballot', async ({ openPage }) => {
@@ -13,8 +18,8 @@ test('a checked-in guest lands on the ballot', async ({ openPage }) => {
   await expect(page.getByRole('tab', { name: 'Individual Male' })).toBeVisible();
 });
 
-test('results page lists every category', async ({ openPage }) => {
-  const page = await openPage('/results.html');
+test('results page lists every category once the reveal starts', async ({ openPage }) => {
+  const page = await openPage('/results.html', { db: partyData({ revealed: { [IDS.male]: 1 } }) });
   for(const name of ['Individual Male', 'Individual Female', 'Best Duo', 'Best Group'])
     await expect(page.getByRole('heading', { name })).toBeVisible();
 });

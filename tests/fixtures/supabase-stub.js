@@ -62,9 +62,19 @@
       if(a.p_voting_open != null) s.voting_open = a.p_voting_open;
       if(a.p_results_visible != null) s.results_visible = a.p_results_visible;
     },
-    admin_clear_votes: () => { db.votes = []; appState().votes_generation++; },
+    admin_set_reveal: a => {
+      const s = appState();
+      s.revealed = a.p_category ? { ...(s.revealed || {}) } : {};
+      if(a.p_category && a.p_place) s.revealed[a.p_category] = a.p_place;
+      else if(a.p_category) delete s.revealed[a.p_category];
+    },
+    admin_show_award: a => { appState().award_shown = !!a.p_shown; },
+    admin_clear_votes: () => { db.votes = []; Object.assign(appState(), { revealed: {}, award_shown: false }); appState().votes_generation++; },
     reset_guest_devices: () => ++appState().reset_generation,
-    admin_start_fresh: () => { db.votes = []; db.entries = []; db.teams = []; db.contestant_photos = []; }
+    admin_start_fresh: () => {
+      db.votes = []; db.entries = []; db.teams = []; db.contestant_photos = [];
+      Object.assign(appState(), { revealed: {}, award_shown: false });
+    }
   };
 
   window.supabase = { createClient: () => ({

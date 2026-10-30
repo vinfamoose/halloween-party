@@ -31,8 +31,18 @@ function partyData(app = {}){
       { device_id: 'd_3', category_id: IDS.group, entry_id: null, team_id: 't1', voter_entry_id: 'e1', created_at: '2026-10-31T20:02:00Z' }
     ],
     contestant_photos: [],
-    app_state: [{ id: 1, reset_generation: 0, votes_generation: 0, voting_open: true, results_visible: true, results_revealed_at: null, ...app }]
+    app_state: [{ id: 1, reset_generation: 0, votes_generation: 0, voting_open: true, revealed: {}, award_shown: false, ...app }]
   };
+}
+
+
+// The same party with a clear 1st, 2nd and 3rd for Individual Male: Jordan 3 votes, Sam 2, Morgan 1.
+function podiumData(app = {}){
+  const db = partyData(app);
+  db.entries.push({ id: 'e6', name: 'Morgan', costume: 'Werewolf', gender: 'male', team_id: null });
+  const vote = (n, entry) => ({ device_id: 'd_p' + n, category_id: IDS.male, entry_id: entry, team_id: null, voter_entry_id: null, created_at: '2026-10-31T21:00:00Z' });
+  db.votes.push(vote(1, 'e1'), vote(2, 'e1'), vote(3, 'e2'), vote(4, 'e6'));
+  return db;
 }
 
 const test = base.extend({
@@ -58,4 +68,4 @@ const test = base.extend({
 // A guest who has already checked in as Jordan.
 const checkedIn = { 'costume-contest-registration': JSON.stringify({ entryId: 'e1', teamId: null, name: 'Jordan', costume: 'Zombie' }) };
 
-module.exports = { test, expect, partyData, checkedIn, IDS };
+module.exports = { test, expect, partyData, podiumData, checkedIn, IDS };

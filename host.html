@@ -9,11 +9,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@500;700;900&family=Grenze:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=17">
+<link rel="stylesheet" href="style.css?v=19">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="host">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="s-spade" viewBox="0 0 24 24"><path d="M12 2C8 7 3 10 3 14.5a4.5 4.5 0 007.6 3.2C10.3 19.6 9.6 21 8 22h8c-1.6-1-2.3-2.4-2.6-4.3A4.5 4.5 0 0021 14.5C21 10 16 7 12 2z"/></symbol>
+  <symbol id="s-heart" viewBox="0 0 24 24"><path d="M12 21.5C5 15.6 2 12 2 8.2A5 5 0 0112 6a5 5 0 0110 2.2c0 3.8-3 7.4-10 13.3z"/></symbol>
+  <symbol id="s-club" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4.4"/><circle cx="6.6" cy="13.8" r="4.4"/><circle cx="17.4" cy="13.8" r="4.4"/><path d="M12 10c0 6-.8 9.5-3 12h6c-2.2-2.5-3-6-3-12z"/></symbol>
+  <symbol id="s-diamond" viewBox="0 0 24 24"><path d="M12 1.5l8 10.5-8 10.5L4 12z"/></symbol>
   <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
   <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
@@ -76,9 +80,19 @@
             <h2 class="title">Party controls</h2>
             <div class="admin-switches">
               <button type="button" class="switch" role="switch" id="swVoting" aria-checked="false">Voting open<span class="knob" aria-hidden="true"></span></button>
-              <button type="button" class="switch" role="switch" id="swResults" aria-checked="false">Results visible<span class="knob" aria-hidden="true"></span></button>
             </div>
-            <p class="hint">Closed voting is enforced by the database. Hidden results are only hidden on the results and big-screen pages; the counts are still public in the database.</p>
+            <p class="hint">Closed voting is enforced by the database.</p>
+          </div>
+
+          <div class="admin-block">
+            <div class="votelog-head"><h2 class="title">Results</h2><button type="button" class="linkbtn" id="resultsRefresh">Refresh</button></div>
+            <p class="hint">The standings are only shown here. Each tap turns the next place over on the big screen and the results page, 3rd first, then 2nd, then 1st. Until then they're only hidden on those pages; the counts are still public in the database.</p>
+            <div class="reveal-list" id="revealList"></div>
+            <button type="button" class="btn ghost" id="hideAll">Hide all results</button>
+            <div class="award-control">
+              <p class="hint">Pops the Best Host award up full-screen on the big screen and the results page.</p>
+              <button type="button" class="btn" id="awardBtn" aria-pressed="false">Show Best Host</button>
+            </div>
           </div>
 
           <div class="admin-block">
@@ -90,7 +104,7 @@
           <div class="admin-block danger-zone">
             <h2 class="title">Reset</h2>
             <div>
-              <p class="hint">Deletes every vote but keeps guests and photos. Phones forget their votes, so everyone can vote again.</p>
+              <p class="hint">Deletes every vote but keeps guests and photos. Phones forget their votes, so everyone can vote again. Every result goes face-down and the Best Host award comes down.</p>
               <button type="button" class="btn danger" id="clearVotes">Clear all votes</button>
             </div>
             <div>
@@ -98,7 +112,7 @@
               <button type="button" class="btn danger" id="resetDevices">Reset all guest devices</button>
             </div>
             <div>
-              <p class="hint">After a test run: deletes every guest, group, vote and photo, and resets every guest device. Categories and the switches above stay as they are.</p>
+              <p class="hint">After a test run: deletes every guest, group, vote and photo, and resets every guest device. Results go face-down and the Best Host award comes down; categories and the voting switch stay as they are.</p>
               <button type="button" class="btn danger" id="startFresh">Start fresh</button>
             </div>
           </div>
@@ -127,7 +141,7 @@
 <input type="file" id="libInput" accept="image/*" hidden>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="shared.js?v=9"></script>
+<script src="shared.js?v=10"></script>
 <script>
 const $ = id => document.getElementById(id);
 const ICON_CAM = '<svg class="icon" aria-hidden="true"><use href="#i-camera"/></svg>';
@@ -349,23 +363,73 @@ let isAdmin = false;
 async function refreshAdmin(){
   if(!isAdmin) return;
   const app = await getAppState();
-  [['swVoting', app.voting_open], ['swResults', app.results_visible]].forEach(([id, on]) => {
-    $(id).setAttribute('aria-checked', on); $(id).classList.toggle('on', on);
-  });
-  await loadVoteLog();
+  $('swVoting').setAttribute('aria-checked', app.voting_open); $('swVoting').classList.toggle('on', app.voting_open);
+  await Promise.all([loadReveal(app), loadVoteLog()]);
 }
 
-// Party switches
-[['swVoting', 'p_voting_open', 'Voting'], ['swResults', 'p_results_visible', 'Results']].forEach(([id, param, what]) => {
-  $(id).addEventListener('click', async () => {
-    const on = $(id).getAttribute('aria-checked') !== 'true';
-    $(id).disabled = true;
-    const { error } = await sb.rpc('admin_set_flags', { [param]: on });
-    $(id).disabled = false;
-    if(error){ toast('That failed — are you signed in as an admin?', true); return; }
-    toast(what === 'Voting' ? (on ? 'Voting is open.' : 'Voting is closed.') : (on ? 'Results are showing.' : 'Results are hidden.'));
-    refreshAdmin();
-  });
+// Voting switch
+$('swVoting').addEventListener('click', async () => {
+  const on = $('swVoting').getAttribute('aria-checked') !== 'true';
+  $('swVoting').disabled = true;
+  const { error } = await sb.rpc('admin_set_flags', { p_voting_open: on });
+  $('swVoting').disabled = false;
+  if(error){ toast('That failed — are you signed in as an admin?', true); return; }
+  toast(on ? 'Voting is open.' : 'Voting is closed.');
+  refreshAdmin();
+});
+
+// Results: every category's standings, and its next place to turn over on the big screen (3rd, then 2nd, then 1st).
+async function loadReveal(app){
+  const state = await loadAll();
+  const revealed = app.revealed || {};
+  $('revealList').innerHTML = state.categories.map((cat, i) => {
+    const placed = withPlaces(withCounts(buildContestants(cat.kind, state), cat.id, state.votes));
+    const places = placesOf(placed);
+    const shown = revealed[cat.id] || 0;
+    const next = nextPlace(places, shown);
+    const voted = placed.filter(c => c.votes > 0);
+    const rows = voted.map(c => {
+      const up = c.place && placeShown(c.place, shown);
+      return `<li${up ? ' class="up"' : ''}><span class="pl">${c.place ? PLACE_NAMES[c.place] : ''}</span>
+        <span class="nm">${escapeHtml(c.label)}${up ? '<span class="tag">On screen</span>' : ''}<span>${escapeHtml(c.sub)}</span></span>
+        <span class="v">${c.votes}</span></li>`;
+    }).join('');
+    const unvoted = placed.length - voted.length;
+    const label = next ? `Reveal ${PLACE_NAMES[next]} place` : places.length ? 'All places revealed' : 'No votes yet';
+    return `<section class="reveal-cat">
+      <h3>${suitPip(i)}${escapeHtml(cat.name)}</h3>
+      ${voted.length ? `<ol class="standings">${rows}</ol>` : ''}
+      ${unvoted ? `<p class="more">${unvoted} with no votes</p>` : ''}
+      <div class="reveal-actions">
+        <button type="button" class="btn" data-cat="${escapeHtml(cat.id)}" data-place="${next || ''}"${next ? '' : ' disabled'}>${label}</button>
+        ${shown ? `<button type="button" class="linkbtn" data-cat="${escapeHtml(cat.id)}" data-place="0">Hide again</button>` : ''}
+      </div>
+    </section>`;
+  }).join('') || '<div class="empty">No categories are set up yet.</div>';
+  const on = !!app.award_shown;
+  $('awardBtn').textContent = on ? 'Hide Best Host' : 'Show Best Host';
+  $('awardBtn').setAttribute('aria-pressed', on);
+  $('awardBtn').classList.toggle('ghost', on);
+}
+$('revealList').addEventListener('click', async ev => {
+  const btn = ev.target.closest('button[data-cat]');
+  if(!btn || btn.disabled) return;
+  const place = +btn.dataset.place;
+  btn.disabled = true;
+  const { error } = await sb.rpc('admin_set_reveal', { p_category: btn.dataset.cat, p_place: place });
+  if(error){ btn.disabled = false; toast('That failed — are you signed in as an admin?', true); return; }
+  toast(place ? `${PLACE_NAMES[place]} place is on screen.` : 'Face-down again.');
+  refreshAdmin();
+});
+$('resultsRefresh').addEventListener('click', refreshAdmin);
+$('awardBtn').addEventListener('click', async () => {
+  const on = $('awardBtn').getAttribute('aria-pressed') !== 'true';
+  $('awardBtn').disabled = true;
+  const { error } = await sb.rpc('admin_show_award', { p_shown: on });
+  $('awardBtn').disabled = false;
+  if(error){ toast('That failed — are you signed in as an admin?', true); return; }
+  toast(on ? 'Best Host is on screen.' : 'Best Host award taken down.');
+  refreshAdmin();
 });
 
 // Vote log: every vote by category, flagging what looks off.
@@ -417,7 +481,9 @@ function confirmButton(btn, busyText, action, doneMsg){
     await Promise.all([loadStudio(), refreshAdmin()]);
   });
 }
-const rpcOrThrow = async name => { const { error } = await sb.rpc(name); if(error) throw error; };
+const rpcOrThrow = async (name, args) => { const { error } = await sb.rpc(name, args); if(error) throw error; };
+
+confirmButton($('hideAll'), 'Hiding…', () => rpcOrThrow('admin_set_reveal', { p_category: null, p_place: 0 }), 'Every card is face-down again.');
 
 confirmButton($('clearVotes'), 'Clearing…', () => rpcOrThrow('admin_clear_votes'), 'All votes cleared.');
 confirmButton($('resetDevices'), 'Resetting…', () => rpcOrThrow('reset_guest_devices'), 'All guest devices reset.');
