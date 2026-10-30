@@ -38,12 +38,17 @@ no code changes needed unless you introduce a new `kind` beyond
   primary key on `votes` and a device id stored in the browser's `localStorage`.
 
 ## Pages
+- `index.html` — the bare site address (`https://vinfamoose.github.io/halloween-party/`); sends guests straight to `party.html`.
 - `party.html` — guests on phones: Check In and Vote.
 - `results.html` — live leaderboard, phone-sized on every screen (the Results tab links here).
 - `display.html` — the big projector screen. Open it on the TV/laptop (`https://…/display.html`).
   While results are hidden it shows how many have checked in and voted, and
   whether voting is open; at the reveal it becomes the leaderboard.
 - `host.html` — host page: photos, add/regroup/delete guests (no login; keep the link private).
+- `sign-in.html` — the printed sign for the door: "Step 1: Check In Your Costume" with a QR code to
+  `party.html`, and "Step 2: Get Buzzed, Not Bitten". Open it and press **Print** (turn on
+  *Background graphics* in the print dialog); it fills one A4 or Letter page. Printed from a local copy,
+  the QR still points at the live site (`https://vinfamoose.github.io/halloween-party/party.html`).
 - `style.css` / `shared.js` — shared styles and Supabase/data logic. Both pages
   are plain static files, so GitHub Pages (free) hosts them as-is.
 

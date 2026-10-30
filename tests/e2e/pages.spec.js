@@ -25,3 +25,18 @@ test('host page shows the guest list', async ({ openPage }) => {
   await expect(page.locator('#soloList')).toContainText('Jordan');
   await expect(page.locator('#groupList')).toContainText('Ghostbusters');
 });
+
+test('printable sign-in sheet shows both steps and a QR code to the check-in page', async ({ openPage }) => {
+  const page = await openPage('/sign-in.html');
+  await expect(page.getByRole('heading', { name: 'Check In Your Costume' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Get Buzzed, Not Bitten' })).toBeVisible();
+  // served from a local test server, so it points at the live site rather than 127.0.0.1
+  await expect(page.locator('#qr')).toHaveAttribute('aria-label', 'QR code for https://vinfamoose.github.io/halloween-party/party.html');
+  await expect(page.locator('#qr svg')).toBeVisible();
+});
+
+test('the bare site address goes to the check-in page', async ({ openPage }) => {
+  const page = await openPage('/');
+  await expect(page).toHaveURL(/\/party\.html$/);
+  await expect(page.getByRole('heading', { name: 'Check in' })).toBeVisible();
+});
