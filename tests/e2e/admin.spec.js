@@ -1,5 +1,5 @@
 // The host page's Admin tab: sign-in, who gets the tools, and what they do.
-const { test, expect } = require('./helpers');
+const { test, expect, podiumData, IDS } = require('./helpers');
 
 const admin = { session: { user: { email: 'host@example.test' } }, admin: true };
 
@@ -52,4 +52,42 @@ test('destructive buttons need a second tap', async ({ openPage }) => {
   await btn.click();
   await expect(page.locator('#toast')).toContainText('All votes cleared');
   expect(await page.evaluate(() => window.__TEST_DB.votes.length)).toBe(0);
+});
+
+test('the Results panel shows the standings and reveals 3rd, then 2nd, then 1st', async ({ openPage }) => {
+  const page = await openPage('/host.html', { auth: admin, db: podiumData() });
+  await page.getByRole('tab', { name: 'Admin' }).click();
+  const cat = page.locator('.reveal-cat', { hasText: 'Individual Male' });
+  await expect(cat.locator('.standings li')).toHaveCount(3);
+  await expect(cat.locator('.standings li').first()).toContainText('Jordan');
+  const revealed = () => page.evaluate(id => window.__TEST_DB.app_state[0].revealed[id], IDS.male);
+
+  for(const [label, place] of [['Reveal 3rd place', 3], ['Reveal 2nd place', 2], ['Reveal 1st place', 1]]){
+    await cat.getByRole('button', { name: label }).click();
+    await expect.poll(revealed).toBe(place);
+  }
+  await expect(cat.getByRole('button', { name: 'All places revealed' })).toBeDisabled();
+  await expect(cat.locator('.standings li.up')).toHaveCount(3);
+
+  await cat.getByRole('button', { name: 'Hide again' }).click();
+  await expect.poll(revealed).toBeUndefined();
+  await expect(cat.getByRole('button', { name: 'Reveal 3rd place' })).toBeEnabled();
+});
+
+test('a category with only one vote count starts at 1st', async ({ openPage }) => {
+  const page = await openPage('/host.html', { auth: admin });
+  await page.getByRole('tab', { name: 'Admin' }).click();
+  await expect(page.locator('.reveal-cat', { hasText: 'Best Group' }).getByRole('button', { name: 'Reveal 1st place' })).toBeVisible();
+  await expect(page.locator('.reveal-cat', { hasText: 'Best Duo' }).getByRole('button', { name: 'No votes yet' })).toBeDisabled();
+});
+
+test('the Best Host button pops the award up and takes it down', async ({ openPage }) => {
+  const page = await openPage('/host.html', { auth: admin });
+  await page.getByRole('tab', { name: 'Admin' }).click();
+  const shown = () => page.evaluate(() => window.__TEST_DB.app_state[0].award_shown);
+  await page.getByRole('button', { name: 'Show Best Host' }).click();
+  await expect.poll(shown).toBe(true);
+  await page.getByRole('button', { name: 'Hide Best Host' }).click();
+  await expect.poll(shown).toBe(false);
+  await expect(page.getByRole('button', { name: 'Show Best Host' })).toBeVisible();
 });

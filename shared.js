@@ -26,7 +26,8 @@ function readJson(key){ try{ return JSON.parse(readStore(key)); }catch(e){ retur
 
 // ---------- Party state set by the admin (app_state) ----------
 // Defaults apply until the migrations are run, so the pages keep working without them.
-const APP_DEFAULTS = { reset_generation: 0, votes_generation: 0, voting_open: true, results_visible: true };
+// revealed: { [categoryId]: the best place turned over so far, 3, 2 or 1 } (see placeShown below).
+const APP_DEFAULTS = { reset_generation: 0, votes_generation: 0, voting_open: true, revealed: {}, award_shown: false };
 async function getAppState(){
   const { data } = await sb.from('app_state').select('*').eq('id', 1).maybeSingle();
   return { ...APP_DEFAULTS, ...(data || {}) };
@@ -126,6 +127,25 @@ function withCounts(contestants, categoryId, votes){
     map[key] = (map[key]||0) + 1;
   });
   return contestants.map(c => ({ ...c, votes: map[c.id] || 0 }));
+}
+
+// ---------- Places for the reveal ----------
+// 1st, 2nd and 3rd go to the three highest vote counts; a tie shares its place, and nobody places without a vote.
+const PLACE_NAMES = ['', '1st', '2nd', '3rd'];
+function withPlaces(contestants){
+  const top = [...new Set(contestants.map(c => c.votes).filter(n => n > 0))].sort((a, b) => b - a).slice(0, 3);
+  return contestants
+    .map(c => ({ ...c, place: top.includes(c.votes) ? top.indexOf(c.votes) + 1 : null }))
+    .sort((a, b) => b.votes - a.votes || a.label.localeCompare(b.label));
+}
+// The places a category has, best first: [1, 2, 3], or fewer when there are fewer different vote counts.
+function placesOf(placed){ return [...new Set(placed.map(c => c.place).filter(Boolean))].sort(); }
+// The admin turns places over from the bottom: once `shown` is 2, both 2nd and 3rd are face-up.
+function placeShown(place, shown){ return shown > 0 && place >= shown; }
+// What the next tap turns over: the lowest place still face-down, or null once 1st is showing.
+function nextPlace(places, shown){
+  const left = places.filter(p => !placeShown(p, shown));
+  return left.length ? Math.max(...left) : null;
 }
 
 // Suit pip for a category: categories are dealt the four suits in order, so every screen agrees.

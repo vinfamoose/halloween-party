@@ -33,8 +33,11 @@ do $$ begin
   begin perform public.admin_clear_votes(); exception when insufficient_privilege then null; end;
   begin perform public.admin_start_fresh(); exception when insufficient_privilege then null; end;
   begin perform public.reset_guest_devices(); exception when insufficient_privilege then null; end;
+  begin perform public.admin_set_reveal((select id from public.categories limit 1), 3); exception when insufficient_privilege then null; end;
+  begin perform public.admin_show_award(true); exception when insufficient_privilege then null; end;
   if not (select voting_open from public.app_state where id = 1) or (select count(*) from public.votes) <> 1
-     or (select reset_generation from public.app_state where id = 1) <> 0 then
+     or (select reset_generation from public.app_state where id = 1) <> 0
+     or (select revealed from public.app_state where id = 1) <> '{}'::jsonb or (select award_shown from public.app_state where id = 1) then
     raise exception 'a guest changed something through an admin control';
   end if;
 end $$;
@@ -79,10 +82,29 @@ do $$ begin
   if (select results_revealed_at from public.app_state where id = 1) is null then raise exception 'reveal time not recorded'; end if;
 end $$;
 
-\echo '7. Clear all votes, reset devices and start fresh'
+\echo '7. The admin turns a category over a place at a time, 3rd first, and shows the award'
+do $$
+declare c text := (select id::text from public.categories where kind = 'individual_male');
+begin
+  perform public.admin_set_reveal(c::uuid, 3);
+  perform public.admin_set_reveal(c::uuid, 2);
+  if (select revealed ->> c from public.app_state where id = 1) <> '2' then raise exception 'reveal not recorded'; end if;
+  perform public.admin_set_reveal(c::uuid, 0);
+  if (select revealed ? c from public.app_state where id = 1) then raise exception 'hiding a category did not clear it'; end if;
+  begin perform public.admin_set_reveal(c::uuid, 4); exception when invalid_parameter_value then null; end;
+  if (select revealed ? c from public.app_state where id = 1) then raise exception 'an out-of-range place was accepted'; end if;
+  perform public.admin_set_reveal(c::uuid, 1);
+  perform public.admin_show_award(true);
+  if not (select award_shown from public.app_state where id = 1) then raise exception 'award not shown'; end if;
+end $$;
+
+\echo '8. Clear all votes, reset devices and start fresh'
 do $$ begin
   perform public.admin_clear_votes();
   if (select count(*) from public.votes) <> 0 then raise exception 'votes left after clearing'; end if;
+  if (select revealed from public.app_state where id = 1) <> '{}'::jsonb or (select award_shown from public.app_state where id = 1) then
+    raise exception 'clearing the votes left the reveal or the award up';
+  end if;
   if public.reset_guest_devices() <> 1 then raise exception 'reset generation did not move to 1'; end if;
   perform public.admin_start_fresh();
   if (select count(*) from public.entries) <> 0 then raise exception 'guests left after start fresh'; end if;

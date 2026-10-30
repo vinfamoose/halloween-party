@@ -1,43 +1,52 @@
-// The big screen: join screen before the reveal, leaderboard after it, then the Best Host award.
-const { test, expect, partyData } = require('./helpers');
+// The big screen: live counts before the reveal, then each category's places turned over 3rd first,
+// and the Best Host award when the admin shows it.
+const { test, expect, partyData, podiumData, IDS } = require('./helpers');
+
+const male = page => page.locator('.suit', { hasText: 'Individual Male' });
 
 test('before the reveal it shows the counts, not the standings', async ({ openPage }) => {
-  const page = await openPage('/display.html', { db: partyData({ results_visible: false }) });
+  const page = await openPage('/display.html');
   await expect(page.locator('h1')).toContainText('Contest');
-  await expect(page.locator('#joinQr')).toHaveCount(0);
   await expect(page.locator('#tGuests')).toHaveText('5');
   await expect(page.locator('#tVotes')).toHaveText('3');
   await expect(page.locator('.suit')).toHaveCount(0);
 });
 
-test('after the reveal it shows the leaderboard', async ({ openPage }) => {
-  const page = await openPage('/display.html');
+test('turning over 3rd place shows only 3rd; 2nd and 1st stay face-down', async ({ openPage }) => {
+  const page = await openPage('/display.html', { db: podiumData({ revealed: { [IDS.male]: 3 } }) });
   await expect(page.locator('h1')).toContainText('Results');
   await expect(page.locator('.suit')).toHaveCount(4);
-  await expect(page.locator('.intermission')).toHaveCount(0);
+  await expect(male(page)).toContainText('Morgan');
+  await expect(male(page)).not.toContainText('Sam');
+  await expect(male(page)).not.toContainText('Jordan');
+  await expect(male(page).locator('.row.down')).toHaveCount(2);
+  // a category nobody has turned over yet is all face-down
+  await expect(page.locator('.suit', { hasText: 'Best Group' }).locator('.row.down')).toHaveCount(1);
+  await expect(page.locator('.suit', { hasText: 'Best Group' })).not.toContainText('Ghostbusters');
 });
 
-test('the Best Host award appears 30 seconds after a live reveal', async ({ page, openPage }) => {
-  await page.clock.install();
-  await openPage('/display.html', { db: partyData({ results_visible: false }) });
-  await expect(page.locator('.intermission')).toBeVisible();
+test('the next place turned over flips into view live', async ({ openPage }) => {
+  const page = await openPage('/display.html', { db: podiumData({ revealed: { [IDS.male]: 3 } }) });
+  await expect(male(page)).toContainText('Morgan');
+  await page.evaluate(id => { window.__TEST_DB.app_state[0].revealed = { [id]: 2 }; loadResults(); }, IDS.male);
+  await expect(male(page).locator('.row.just')).toContainText('Sam');
+  await expect(male(page).locator('.row.down')).toHaveCount(1);
+  await expect(male(page)).not.toContainText('Jordan');
+});
 
-  // The admin reveals the results; the page picks it up on its next refresh.
-  await page.evaluate(() => {
-    Object.assign(window.__TEST_DB.app_state[0], { results_visible: true, results_revealed_at: new Date().toISOString() });
-    loadResults();
-  });
-  await expect(page.locator('.suit')).toHaveCount(4);
+test('1st place is crowned the winner', async ({ openPage }) => {
+  const page = await openPage('/display.html', { db: podiumData({ revealed: { [IDS.male]: 1 } }) });
+  await expect(male(page).locator('.row.down')).toHaveCount(0);
+  await expect(male(page).locator('.row.place-1')).toContainText('Jordan');
+  await expect(male(page).locator('.row.place-1')).toContainText('WINNER');
+});
 
-  await page.clock.runFor(29_000);
+test('the Best Host award shows only while the admin has it up', async ({ openPage }) => {
+  const page = await openPage('/display.html', { db: partyData() });
   await expect(page.locator('#award')).toBeHidden();
-  await page.clock.runFor(2_000);
+  await page.evaluate(() => { window.__TEST_DB.app_state[0].award_shown = true; loadResults(); });
   await expect(page.locator('#award')).toBeVisible();
   await expect(page.locator('#award')).toContainText('Rachel Taylor');
-});
-
-test('a big screen reloaded after the reveal shows the award straight away', async ({ openPage }) => {
-  const revealed = new Date(Date.now() - 60_000).toISOString();
-  const page = await openPage('/display.html', { db: partyData({ results_revealed_at: revealed }) });
-  await expect(page.locator('#award')).toBeVisible();
+  await page.evaluate(() => { window.__TEST_DB.app_state[0].award_shown = false; loadResults(); });
+  await expect(page.locator('#award')).toBeHidden();
 });
